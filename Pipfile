@@ -1,0 +1,16 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+
+[packages]
+
+facebook-sdk = ">= 2.0.0, < 3"
+google = ">= 1.9.3, < 2"
+google-api-python-client = ">= 1.6.4 , < 2"
+
+
+[dev-packages]
+

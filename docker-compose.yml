@@ -1,0 +1,18 @@
+version: '3'
+services:
+  facebook:
+    build: .
+    environment:
+      FACEBOOK_APP_ID:
+      FACEBOOK_APP_SECRET:
+      FACEBOOK_PAGE_ID: BostonDSA
+      GOOGLE_ACCOUNT_TYPE:
+      GOOGLE_CALENDAR_ID:
+      GOOGLE_CLIENT_EMAIL:
+      GOOGLE_CLIENT_ID:
+      GOOGLE_PRIVATE_KEY:
+      GOOGLE_PRIVATE_KEY_ID:
+      GOOGLE_SCOPE: 'https://www.googleapis.com/auth/calendar'
+    image: amancevice/fest
+    volumes:
+      - ./fest:/fest
