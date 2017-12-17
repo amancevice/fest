@@ -23,6 +23,8 @@ setup(name='fest',
                    'Programming Language :: Python :: 3.5',
                    'Programming Language :: Python :: 3.6',
                    'Programming Language :: Python'],
-      install_requires=['facebook-sdk >= 2.0.0, < 3',
+      install_requires=['click >= 6.7.0, < 6.8',
+                        'facebook-sdk >= 2.0.0, < 3',
                         'google >= 1.9.3, < 2',
-                        'google-api-python-client >= 1.6.4, < 2'])
+                        'google-api-python-client >= 1.6.4, < 2'],
+      entry_points={'console_scripts': ['fest=fest.main:fest']})

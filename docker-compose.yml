@@ -1,6 +1,6 @@
 version: '3'
 services:
-  facebook:
+  fest:
     build: .
     environment:
       FACEBOOK_APP_ID:
@@ -15,4 +15,4 @@ services:
       GOOGLE_SCOPE: 'https://www.googleapis.com/auth/calendar'
     image: amancevice/fest
     volumes:
-      - ./fest:/fest
+      - ./fest:/fest/fest
