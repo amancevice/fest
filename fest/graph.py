@@ -1,3 +1,6 @@
+"""
+Facebook Graph API tools.
+"""
 import os
 from datetime import datetime
 
@@ -8,7 +11,26 @@ FACEBOOK_APP_SECRET = os.getenv('FACEBOOK_APP_SECRET')
 FACEBOOK_PAGE_ID = os.getenv('FACEBOOK_PAGE_ID')
 
 
+def authenticated(func):
+    """ Authentication decorator. """
+    def wrapper(graph, *args, **kwargs):
+        """ Authentication wrapper. """
+        try:
+            return func(graph, *args, **kwargs)
+        except facebook.GraphAPIError:
+            graph.authenticate()
+            return func(graph, *args, **kwargs)
+    return wrapper
+
+
 class GraphAPI(facebook.GraphAPI):
+    """ Facebook GraphAPI Object.
+
+        :param app_id: Facebook app ID
+        :param app_secret: Facebook app secret ID
+        :type app_id: str
+        :type app_secret: str
+    """
     def __init__(self, app_id=None, app_secret=None, **kwargs):
         self.app_id = app_id or FACEBOOK_APP_ID
         self.app_secret = app_secret or FACEBOOK_APP_SECRET
@@ -18,17 +40,6 @@ class GraphAPI(facebook.GraphAPI):
         """ Get access token. """
         self.access_token = self.get_app_access_token(self.app_id,
                                                       self.app_secret)
-
-    def authenticated(func):
-        """ Authentication decorator. """
-        def wrapper(self, *args, **kwargs):
-            """ Authentication wrapper. """
-            try:
-                return func(self, *args, **kwargs)
-            except facebook.GraphAPIError:
-                self.authenticate()
-                return func(self, *args, **kwargs)
-        return wrapper
 
     @authenticated
     def get_page(self, page_id, *fields):
@@ -89,7 +100,7 @@ class FacebookPage(FacebookObject):
         """ Get list of page events. """
         return self.graph.get_events(self['id'])
 
-    def to_google(self, tz=None):
+    def to_google(self, tz=None):  # pylint: disable=invalid-name
         """ Convert object to Google. """
         return {
             'description': self.description_string(),
@@ -114,6 +125,7 @@ class FacebookEvent(FacebookObject):
         return ' '.join(values) or None
 
     def timezone(self):
+        """ Get timezone from event. """
         try:
             start = datetime.strptime(self.get('start_time'),
                                       '%Y-%m-%dT%H:%M:%S%z')
