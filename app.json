@@ -1,0 +1,41 @@
+{
+  "name": "Facebook Event Sync",
+  "description": "Synchronize a Facebook Page's events with Google Calendar",
+  "repository": "https://github.com/amancevice/fest",
+  "keywords": ["facebook", "google-calendar", "calendar"],
+  "addons": ["scheduler:standard"],
+  "env": {
+    "FACEBOOK_APP_ID" : {
+      "description": "App ID of Facebook App"
+    },
+    "FACEBOOK_APP_SECRET" : {
+      "description": "App secret of Facebook App"
+    },
+    "FACEBOOK_PAGE_ID" : {
+      "description": "Facebook Page ID/alias"
+    },
+    "GOOGLE_ACCOUNT_TYPE" : {
+      "description": "Google Service Acct Type",
+      "value": "service_account"
+    },
+    "GOOGLE_CALENDAR_ID" : {
+      "description": "Google Calendar ID"
+    },
+    "GOOGLE_CLIENT_EMAIL" : {
+      "description": "Google Service Account Client Email"
+    },
+    "GOOGLE_CLIENT_ID" : {
+      "description": "Google Service Account Client ID"
+    },
+    "GOOGLE_PRIVATE_KEY" : {
+      "description": "Google Service Account Private Key"
+    },
+    "GOOGLE_PRIVATE_KEY_ID" : {
+      "description": "Google Service Account Private Key ID"
+    },
+    "GOOGLE_SCOPE" : {
+      "description": "Google Cloud Service Scope",
+      "value": "https://www.googleapis.com/auth/calendar"
+    },
+  }
+}

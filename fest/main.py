@@ -11,28 +11,28 @@ from fest import google
 @click.version_option(__version__, '-v', '--version')
 @click.option('--facebook-app-id',
               envvar='FACEBOOK_APP_ID',
-              help='TODO')
+              help='Optional facebook app ID')
 @click.option('--facebook-app-secret',
               envvar='FACEBOOK_APP_SECRET',
-              help='TODO')
+              help='Optional facebook app secret')
 @click.option('--google-account-type',
               envvar='GOOGLE_ACCOUNT_TYPE',
-              help='TODO')
+              help='Optional Google service account type')
 @click.option('--google-client-email',
               envvar='GOOGLE_CLIENT_EMAIL',
-              help='TODO')
+              help='Optional Google service client email')
 @click.option('--google-client-id',
               envvar='GOOGLE_CLIENT_ID',
-              help='TODO')
+              help='Optional Google service client ID')
 @click.option('--google-private-key',
               envvar='GOOGLE_PRIVATE_KEY',
-              help='TODO')
+              help='Optional Google service private key')
 @click.option('--google-private-key-id',
               envvar='GOOGLE_PRIVATE_KEY_ID',
-              help='TODO')
+              help='Optional Google service private key ID')
 @click.option('--google-scope',
               envvar='GOOGLE_SCOPE',
-              help='TODO')
+              help='Optional Google service scope')
 @click.pass_context
 def fest(ctx, facebook_app_id, facebook_app_secret, google_account_type,
          google_client_email, google_client_id, google_private_key,
