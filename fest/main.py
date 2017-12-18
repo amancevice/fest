@@ -97,8 +97,12 @@ def fest_sync(ctx, facebook_id, google_id, sync_all):
     fids = set(x['id'] for x in events if x['id'] not in gids)
     sync = [x for x in events if x['id'] in fids]
 
-    click.echo('Syncing {} Events'.format(len(events)))
-    gcal.add_events(*sync)
+    click.echo('Syncing {} Events'.format(len(sync)))
+    for event in sync:
+        click.echo('-> {} :: {} :: {}'.format(event['start_time'],
+                                              event['id'],
+                                              event['name']))
+        gcal.add_event(event)
 
 
 if __name__ == '__main__':

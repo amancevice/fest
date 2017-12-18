@@ -118,6 +118,13 @@ class GoogleCalendar(GoogleObject):
                                     body=event.to_google()))
         return batch.execute()
 
+    def add_event(self, facebook_event):
+        """ Add facebook event. """
+        events = self.cloud.service.events()
+        query = events.insert(calendarId=self['id'],
+                              body=facebook_event.to_google())
+        return query.execute()
+
     def clear_events(self):
         """ Clears the calendar of ALL events. """
         batch = self.cloud.service.new_batch_http_request()
