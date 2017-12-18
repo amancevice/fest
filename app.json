@@ -6,32 +6,40 @@
   "addons": ["scheduler:standard"],
   "env": {
     "FACEBOOK_APP_ID" : {
-      "description": "App ID of Facebook App"
+      "description": "App ID of Facebook App",
+      "value": "ADDME"
     },
     "FACEBOOK_APP_SECRET" : {
-      "description": "App secret of Facebook App"
+      "description": "App secret of Facebook App",
+      "value": "ADDME"
     },
     "FACEBOOK_PAGE_ID" : {
-      "description": "Facebook Page ID/alias"
+      "description": "Facebook Page ID/alias",
+      "value": "ADDME"
     },
     "GOOGLE_ACCOUNT_TYPE" : {
       "description": "Google Service Acct Type",
       "value": "service_account"
     },
     "GOOGLE_CALENDAR_ID" : {
-      "description": "Google Calendar ID"
+      "description": "Google Calendar ID",
+      "value": "ADDME"
     },
     "GOOGLE_CLIENT_EMAIL" : {
-      "description": "Google Service Account Client Email"
+      "description": "Google Service Account Client Email",
+      "value": "ADDME"
     },
     "GOOGLE_CLIENT_ID" : {
-      "description": "Google Service Account Client ID"
+      "description": "Google Service Account Client ID",
+      "value": "ADDME"
     },
     "GOOGLE_PRIVATE_KEY" : {
-      "description": "Google Service Account Private Key"
+      "description": "Google Service Account Private Key",
+      "value": "ADDME"
     },
     "GOOGLE_PRIVATE_KEY_ID" : {
-      "description": "Google Service Account Private Key ID"
+      "description": "Google Service Account Private Key ID",
+      "value": "ADDME"
     },
     "GOOGLE_SCOPE" : {
       "description": "Google Cloud Service Scope",
