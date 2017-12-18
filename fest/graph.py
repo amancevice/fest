@@ -49,13 +49,15 @@ class GraphAPI(facebook.GraphAPI):
         return FacebookPage(self, **self.get_object(path))
 
     @authenticated
-    def get_events(self, page_id):
+    def get_events(self, page_id, time_filter=None):
         """ Get list of page events. """
-        return list(self.iter_events(page_id))
+        return list(self.iter_events(page_id, time_filter))
 
-    def iter_events(self, page_id):
+    def iter_events(self, page_id, time_filter=None):
         """ Iterate over page events. """
         path = '{}/events'.format(page_id)
+        if time_filter:
+            path += '?time_filter={}'.format(time_filter)
         response = self.get_object(path)
         for item in response['data']:
             yield FacebookEvent(self, **item)
@@ -96,9 +98,9 @@ class FacebookPage(FacebookObject):
         values = [str(location[x]) for x in keys if x in location]
         return ' '.join(values) or None
 
-    def get_events(self):
+    def get_events(self, time_filter=None):
         """ Get list of page events. """
-        return self.graph.get_events(self['id'])
+        return self.graph.get_events(self['id'], time_filter)
 
     def to_google(self, tz=None):  # pylint: disable=invalid-name
         """ Convert object to Google. """
@@ -144,7 +146,7 @@ class FacebookEvent(FacebookObject):
                 'timeZone': self.timezone()
             },
             'end': {
-                'dateTime': self.get('end_time'),
+                'dateTime': self.get('end_time', self.get('start_time')),
                 'timeZone': self.timezone()
             },
             'extendedProperties': {

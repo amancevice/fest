@@ -64,6 +64,12 @@ class CalendarAPI(object):
         """ Get list of Google Calendars. """
         return list(self.iter_calendars())
 
+    def get_calendar(self, google_id):
+        """ Get calendar. """
+        service = self.service.calendars()  # pylint: disable=no-member
+        query = service.get(calendarId=google_id)
+        return GoogleCalendar(self, **query.execute())
+
     def get_facebook_calendar(self, facebook_id):
         """ Get Google Calendar by facebook page ID.
 
@@ -103,6 +109,15 @@ class GoogleObject(dict):
 
 class GoogleCalendar(GoogleObject):
     """ Google Calendar Object. """
+    def add_events(self, *facebook_events):
+        """ Add facebook events. """
+        batch = self.cloud.service.new_batch_http_request()
+        events = self.cloud.service.events()
+        for event in facebook_events:
+            batch.add(events.insert(calendarId=self['id'],
+                                    body=event.to_google()))
+        return batch.execute()
+
     def clear_events(self):
         """ Clears the calendar of ALL events. """
         batch = self.cloud.service.new_batch_http_request()
@@ -139,11 +154,11 @@ class GoogleCalendar(GoogleObject):
         while True:
             try:
                 query = service.list(calendarId=self['id'],
-                                     syncToken=result['nextSyncToken'])
+                                     pageToken=result['nextPageToken'],)
                 result = query.execute()
                 for item in result.get('items', []):
                     yield GoogleEvent(self.cloud, item)
-                if not result.get('items'):
+                if not any(result.get('items', [])):
                     break
             except KeyError:
                 break
