@@ -2,6 +2,7 @@
 CLI Entrypoint
 """
 import click
+import IPython
 from fest import __version__
 from fest import graph as facebook
 from fest import google
@@ -56,6 +57,7 @@ def fest(ctx, facebook_app_id, facebook_app_secret, google_account_type,
 @fest.command('clear')
 @click.option('-f', '--force',
               default=False,
+              help='Do not prompt before clearing',
               is_flag=True,
               prompt='Are you sure?')
 @click.option('-g', '--google-id',
@@ -64,10 +66,49 @@ def fest(ctx, facebook_app_id, facebook_app_secret, google_account_type,
 @click.pass_context
 def fest_clear(ctx, force, google_id):
     """ Clear a linked Google Calendar. """
-    cloud = ctx.obj['cloud']
-    gcal = cloud.get_calendar(google_id)
+    gcal = ctx.obj['cloud'].get_calendar(google_id)
     if force is True:
         gcal.clear_events()
+
+
+@fest.command('create')
+@click.option('-f', '--facebook-id',
+              envvar='FACEBOOK_PAGE_ID',
+              help='Facebook Page ID')
+@click.option('-z', '--tz',
+              required=True,
+              help='Time zone of calendar')
+@click.pass_context
+def fest_create(ctx, facebook_id, tz):
+    """ Create a new Google Calendar. """
+    page = ctx.obj['graph'].get_page(facebook_id)
+    gcal = ctx.obj['cloud'].create_calendar(page, tz)
+    click.echo(gcal['id'])
+
+
+@fest.command('destroy')
+@click.option('-f', '--force',
+              default=False,
+              help='Do not prompt before destroying',
+              is_flag=True,
+              prompt='Are you sure?')
+@click.option('-g', '--google-id',
+              envvar='GOOGLE_CALENDAR_ID',
+              help='Google Calendar ID')
+@click.pass_context
+def fest_destroy(ctx, force, google_id):
+    """ Create a new Google Calendar. """
+    if force is True:
+        ctx.obj['cloud'].delete_calendar(google_id)
+
+
+@fest.command('shell')
+@click.pass_context
+def fest_shell(ctx):
+    """ Sync a facebook page. """
+    cloud = ctx.obj['cloud']
+    graph = ctx.obj['graph']
+    IPython.embed()
 
 
 @fest.command('sync')

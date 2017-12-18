@@ -1,11 +1,11 @@
-version: '3'
+version: '3.3'
 services:
   fest:
     build: .
     environment:
       FACEBOOK_APP_ID:
       FACEBOOK_APP_SECRET:
-      FACEBOOK_PAGE_ID: BostonDSA
+      FACEBOOK_PAGE_ID:
       GOOGLE_ACCOUNT_TYPE:
       GOOGLE_CALENDAR_ID:
       GOOGLE_CLIENT_EMAIL:

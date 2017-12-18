@@ -4,6 +4,9 @@
   "repository": "https://github.com/amancevice/fest",
   "keywords": ["facebook", "google-calendar", "calendar"],
   "addons": ["scheduler:standard"],
+  "scripts": {
+    "postdeploy": "pip install ."
+  },
   "env": {
     "FACEBOOK_APP_ID" : {
       "description": "App ID of Facebook App",
