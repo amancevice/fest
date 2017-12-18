@@ -1,8 +1,6 @@
 """
 CLI Entrypoint
 """
-import logging
-
 import click
 from fest import __version__
 from fest import graph as facebook
@@ -45,7 +43,6 @@ def fest(ctx, facebook_app_id, facebook_app_secret, google_account_type,
     """
     # pylint: disable=too-many-arguments
     ctx.obj = {}
-    ctx.obj['log'] = logging.getLogger(__name__)
     ctx.obj['graph'] = facebook.GraphAPI(app_id=facebook_app_id,
                                          app_secret=facebook_app_secret)
     ctx.obj['cloud'] = google.CalendarAPI(scopes=[google_scope],
@@ -86,23 +83,21 @@ def fest_clear(ctx, force, google_id):
 @click.pass_context
 def fest_sync(ctx, facebook_id, google_id, sync_all):
     """ Sync a facebook page. """
-    log = ctx.obj['log']
-
-    log.info('Fetching Google Events')
+    click.echo('Fetching Google Events: {}'.format(google_id))
     gcal = ctx.obj['cloud'].get_calendar(google_id)
     gevents = gcal.get_events()
 
-    log.info('Fetching Facebook Events')
+    click.echo('Fetching Facebook Events: {}'.format(facebook_id))
     page = ctx.obj['graph'].get_page(facebook_id)
     time_filter = None if sync_all else 'upcoming'
     events = page.get_events(time_filter=time_filter)
 
-    log.info('Merging Events')
+    click.echo('Merging Events')
     gids = set(x.facebook_id for x in gevents)
     fids = set(x['id'] for x in events if x['id'] not in gids)
     sync = [x for x in events if x['id'] in fids]
 
-    log.info('Syncing %d Events', len(events))
+    click.echo('Syncing {} Events'.format(len(events)))
     gcal.add_events(*sync)
 
 
