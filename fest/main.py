@@ -2,7 +2,6 @@
 CLI Entrypoint
 """
 import click
-import IPython
 from fest import __version__
 from fest import graph as facebook
 from fest import google
@@ -81,6 +80,7 @@ def fest_clear(ctx, force, google_id):
 @click.pass_context
 def fest_create(ctx, facebook_id, tz):
     """ Create a new Google Calendar. """
+    # pylint: disable=invalid-name,unused-variable
     page = ctx.obj['graph'].get_page(facebook_id)
     gcal = ctx.obj['cloud'].create_calendar(page, tz)
     click.echo(gcal['id'])
@@ -106,9 +106,14 @@ def fest_destroy(ctx, force, google_id):
 @click.pass_context
 def fest_shell(ctx):
     """ Sync a facebook page. """
-    cloud = ctx.obj['cloud']
-    graph = ctx.obj['graph']
-    IPython.embed()
+    # pylint: disable=unused-variable
+    try:
+        import IPython
+        cloud = ctx.obj['cloud']
+        graph = ctx.obj['graph']
+        IPython.embed()
+    except ImportError:
+        click.echo('Please install IPython to use the shell.')
 
 
 @fest.command('sync')

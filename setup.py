@@ -3,7 +3,7 @@ from setuptools import setup
 
 
 setup(name='fest',
-      version='0.0.2a',
+      version='0.0.2a0',
       author='amancevice',
       author_email='smallweirdnum@gmail.com',
       packages=['fest'],

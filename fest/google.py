@@ -68,7 +68,7 @@ class CalendarAPI(object):
             :type facebook_page: fest.graph.FacebookPage
             :type tz: str
         """
-        # pylint: disable=invalid-name
+        # pylint: disable=invalid-name,no-member
         service = self.service.calendars()
         request = service.insert(body=facebook_page.to_google(tz))
         return GoogleCalendar(self, **request.execute())
@@ -79,7 +79,7 @@ class CalendarAPI(object):
             :param google_id: Google calendar ID
             :type google_id: str
         """
-        # pylint: disable=invalid-name
+        # pylint: disable=invalid-name,no-member
         service = self.service.calendars()
         request = service.delete(calendarId=google_id)
         return request.execute()
