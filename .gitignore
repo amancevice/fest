@@ -100,4 +100,6 @@ ENV/
 # mypy
 .mypy_cache/
 
+# secrets
 .fest
+client_secret.json
