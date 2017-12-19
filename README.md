@@ -136,3 +136,8 @@ Finally, go into the heroku scheduler config and set the cron job to use the scr
 ```bash
 python -m fest.main sync
 ```
+
+## TODO
+
+* Full test coverage
+* Add iCalendar layer to translation
