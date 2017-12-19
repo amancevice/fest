@@ -43,14 +43,16 @@ def fest(ctx, facebook_app_id, facebook_app_secret, google_account_type,
     """
     # pylint: disable=too-many-arguments
     ctx.obj = {}
-    ctx.obj['graph'] = facebook.GraphAPI(app_id=facebook_app_id,
-                                         app_secret=facebook_app_secret)
-    ctx.obj['cloud'] = google.CalendarAPI(scopes=[google_scope],
-                                          service_type=google_account_type,
-                                          private_key_id=google_private_key_id,
-                                          private_key=google_private_key,
-                                          client_email=google_client_email,
-                                          client_id=google_client_id)
+    ctx.obj['graph'] = facebook.GraphAPI(
+        app_id=facebook_app_id,
+        app_secret=facebook_app_secret)
+    ctx.obj['cloud'] = google.CalendarAPI.from_credentials(
+        scopes=[google_scope],
+        service_type=google_account_type,
+        private_key_id=google_private_key_id,
+        private_key=google_private_key,
+        client_email=google_client_email,
+        client_id=google_client_id)
 
 
 @fest.command('clear')
@@ -100,6 +102,17 @@ def fest_destroy(ctx, force, google_id):
     """ Create a new Google Calendar. """
     if force is True:
         ctx.obj['cloud'].delete_calendar(google_id)
+
+
+@click.option('-e', '--email', help='Email of new owner for calendar')
+@click.option('-g', '--google-id',
+              envvar='GOOGLE_CALENDAR_ID',
+              help='Google Calendar ID')
+@fest.command('share')
+def fest_share(ctx, email, google_id):
+    """ Grant ownership of Google Calendar to user. """
+    gcal = ctx.obj['cloud'].get_calendar(google_id)
+    gcal.add_owner(email)
 
 
 @fest.command('shell')
