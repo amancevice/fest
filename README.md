@@ -5,83 +5,109 @@
 [![build](https://travis-ci.org/amancevice/fest.svg?branch=master)](https://travis-ci.org/amancevice/fest)
 [![codecov](https://codecov.io/gh/amancevice/fest/branch/master/graph/badge.svg)](https://codecov.io/gh/amancevice/fest)
 
-Sync facebook events to other services.
+Sync public facebook events to other services.
 
 *Note, only Google Calendar is supported at the moment*
 
+## Prerequisites
+
+Before beginning, you will need to create and configure facebook and Google Cloud accounts:
+
+* [Facebook Developer](./docs/facebook.md#facebook)
+* [Google Cloud Service](./docs/google.md#google-cloud)
+
 ## Installation
 
-Install `fest` as a pip, or use the provided `docker-compose` configuration.
+Install `fest` using pip:
 
 ```bash
 pip install fest
-
-# or
-
-docker-compose pull fest
 ```
 
-## Prerequisites
+Or, use the provided `docker-compose` configuration to use the [fest CLI](./docs/cli.md#fest-cli) in a Docker container.
 
-Before you can access facebook's Graph API you will need to set up a [developer](https://developers.facebook.com) account with facebook.
+## Basic Use
 
-You will also need to set up an account with Google's [Cloud Platform](https://console.developers.google.com).
+The easiest way to manage access is to store your credentials for facebook/Google projects as environmental variables. See the above instructions on how to configure these variables.
 
-### Create a Facebook App
+For these examples the credentials will be explicitly passed.
 
-Create a facebook app and take note of its `App ID` and `App Secret` values. You will need them later.
+### Getting Facebook Page Events
 
-### Create a Google Project
+```python
+import fest
 
-The Google project is more complicated than the facebook app because there are a few routes you could take. This guide assumes you will create a new calendar from scratch using a service account. The calendar can be shared with your personal Google account in order to have manual override control.
+# Connect to Graph API & get page
+graph = fest.GraphAPI('<app_id>', '<app_secret>')
+page = graph.get_page('<page_id_or_alias>')
 
-First, you will need to create a new project in the developer console and give it access to the Google Calendar API.
+# Get ALL events
+events = page.get_events()  
 
-Once the project is given access to the Calendar API, you will need to create credentials. From the `credentials` tab click the "Create credentials" dropdown and select "Service account key". Give the account a name and a role of "Owner". Use JSON for the key type.
-
-After the credentials are created download the client secret JSON file and store it in a safe place.
-
-### Gather Keys
-
-The easiest way to manage access is to store your credentials for facebook/Google projects as environmental variables.
-
-Example:
-
-```bash
-# facebook
-export FACEBOOK_APP_ID='<facebook-app-id>'
-export FACEBOOK_APP_SECRET='<facebook-app-secret>'
-export FACEBOOK_PAGE_ID='<facebook-page-id-or-alias>'
-
-# Google
-export GOOGLE_ACCOUNT_TYPE='service_account'
-export GOOGLE_CALENDAR_ID='<google-calendar-id>'
-export GOOGLE_CLIENT_EMAIL='<google-service-client-email>'
-export GOOGLE_CLIENT_ID='<google-client-id>'
-export GOOGLE_PRIVATE_KEY='<google-private-key-multi-line-string'
-export GOOGLE_PRIVATE_KEY_ID='<google-private-key-id'
-export GOOGLE_SCOPE='https://www.googleapis.com/auth/calendar'
+# Get UPCOMING events
+upcoming = page.get_events(time_filter='upcoming')
 ```
 
-## Create Calendar
+### Creating Google Calendar from Facebook Page
 
-If you need to create a calendar into which facebook events will be synced, you can use the `fest` CLI. You will need to supply the timezone of the calendar:
+Using the service account described above, you can create a Google Calender from a facebook page:
 
-```bash
-fest create --tz America/New_York
+```python
+# Connect to Google Cloud
+cloud = fest.CalendarAPI.from_credentials(
+    scopes=['https://www.googleapis.com/auth/calendar'],
+    service_type='service_account',
+    private_key_id='<private_key_id>',
+    private_key='<private_key>',
+    client_email='<client_email>',
+    client_id='<client_id>')
+
+# Get facebook page
+page = graph.get_page('<page_id_or_alias>')
+
+# Create calendar
+gcal = cloud.create_calendar(page, tz='America/New_York')
 ```
 
-Save the output ID from this process and add it to your environment as `GOOGLE_CALENDAR_ID`.
+### Grant Ownership of the new Calendar
 
-## Sync Calendar
+Because the service account is not a human, it may help to add a human owner to the calendar to manually manage other components of the calendar:
 
-If this is your first time syncing, you can use the `--sync-all` flag to sync the entire calendar.
-
-Omitting this flag only syncs 'upcoming' events from facebook.
-
-```bash
-fest sync --sync-all
+```python
+gcal.add_owner('owner.email@gmail.com')
 ```
+
+### Sync All Facebook Events
+
+With the facebook page and Google Calendar in hand, synching all events is easy:
+
+```python
+gcal.sync_page(page, tz='America/New_York')
+```
+
+This will sync ALL events into the new calendar &mdash; regardless of prior state.
+
+To clear a calendar:
+
+```python
+gcal.clear_events()
+```
+
+### Updates
+
+Events written to the Google Calendar are tagged with their original facebook ID. You can use this value to filter out previously synced events:
+
+```python
+# Get upcoming facebook events
+upcoming = page.get_events(time_filter='upcoming')
+
+# Filter out events that have already been loaded
+events = [x for x in events if gcal.get_facebook_event(x['id']) is None]
+```
+
+### Fest CLI
+
+See [CLI documentation](./docs/cli#fest-cli)
 
 ## Deployment
 
