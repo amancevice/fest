@@ -141,3 +141,4 @@ python -m fest.main sync
 
 * Full test coverage
 * Add iCalendar layer to translation
+* Add Terraform modules to for AWS Lambda, &c.
