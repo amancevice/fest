@@ -45,7 +45,7 @@ class GraphAPI(facebook.GraphAPI):
     def get_page(self, page_id, *fields):
         """ Get facebook page. """
         fields = {'about', 'location', 'mission', 'name'} | set(fields)
-        path = '{}?fields={}'.format(page_id, ','.join(fields))
+        path = '{}?fields={}'.format(page_id, ','.join(sorted(fields)))
         return FacebookPage(self, **self.get_object(path))
 
     @authenticated
