@@ -12,7 +12,7 @@ On the **Add credentials to your project page**, click the **Cancel** button.
 
 Click the **Create credentials** dropdown on the subsequent screen and select **Service account key**.
 
-Under the **Service account** dropdown, select **New service account**. Give the service account and name and a role of **Project -> Service Account Actor**.
+Under the **Service account** dropdown, select **New service account**. Give the service account and name and a role of **Project -> Viewer**.
 
 Select `JSON` as the **Key type** and click **Create**.
 
