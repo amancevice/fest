@@ -246,5 +246,5 @@ class GoogleEvent(GoogleObject):
     def facebook_id(self):
         """ Helper to return facebook ID of event. """
         extended_properties = self.get('extendedProperties', {})
-        private = extended_properties.get('private', {})
+        private = extended_properties.get('public', {})
         return private.get('facebookId')
