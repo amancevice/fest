@@ -1,0 +1,26 @@
+FROM lambci/lambda:build-python3.6
+
+# Require TOX_DIST path as build argument
+ARG TOX_DIST=.tox/dist/
+
+# Copy the tox artifact into image
+COPY ${TOX_DIST} /dist
+
+# Install tox artifact with dependencies & compress
+# /build
+#   |- <TOX + dependencies installed here>
+# /dist
+#   |- TOX-x.y.z.zip
+#   |- lambda.zip
+# /dist-lambda
+#   |- Mountable volume for exporting /dist/lambda.zip
+VOLUME /dist-lambda
+WORKDIR /build
+RUN zipfile=$(ls /dist) && \
+    pip install /dist/${zipfile} -t . && \
+    zip -x '*.pyc' -u -r /dist/lambda.zip . && \
+    echo "cat /dist/lambda.zip > /dist-lambda/${zipfile}" > /entrypoint.sh
+
+# Cat the zipfile as the main process of the image
+# This output can be redirected to a file (and subsequently uploaded to S3)
+CMD ["cat", "/dist/lambda.zip"]
