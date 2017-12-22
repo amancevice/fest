@@ -167,8 +167,8 @@ class GoogleCalendar(GoogleObject):
     def clear_events(self):
         """ Clears the calendar of ALL events. """
         batch = self.service.new_batch_http_request()
+        service = self.service.events()
         for event in self.iter_events():
-            service = self.service.events()
             request = service.delete(calendarId=self['id'],
                                      eventId=event['id'])
             batch.add(request)
