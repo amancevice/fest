@@ -150,7 +150,7 @@ class FacebookEvent(FacebookObject):
                 'timeZone': self.timezone()
             },
             'extendedProperties': {
-                'public': {
+                'shared': {
                     'facebookId': self.get('id')
                 }
             }

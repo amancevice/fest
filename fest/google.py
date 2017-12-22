@@ -142,17 +142,17 @@ class GoogleCalendar(GoogleObject):
     def add_events(self, *facebook_events):
         """ Add facebook events. """
         batch = self.service.new_batch_http_request()
-        events = self.service.events()
+        service = self.service.events()
         for event in facebook_events:
-            batch.add(events.insert(calendarId=self['id'],
-                                    body=event.to_google()))
+            batch.add(service.insert(calendarId=self['id'],
+                                     body=event.to_google()))
         return batch.execute()
 
     def add_event(self, facebook_event):
         """ Add facebook event. """
-        events = self.service.events()
-        request = events.insert(calendarId=self['id'],
-                                body=facebook_event.to_google())
+        service = self.service.events()
+        request = service.insert(calendarId=self['id'],
+                                 body=facebook_event.to_google())
         return request.execute()
 
     def add_owner(self, email):
@@ -220,6 +220,33 @@ class GoogleCalendar(GoogleObject):
             except KeyError:
                 break
 
+    def patch_event(self, facebook_event):
+        """ Patch facebook event. """
+        service = self.service.events()
+        for google_event in self.iter_events():
+            if google_event.facebook_id == facebook_event['id']:
+                request = service.patch(calendarId=self['id'],
+                                        eventId=google_event['id'],
+                                        body=facebook_event.to_google())
+                return request.execute()
+        return None
+
+    def patch_events(self, *facebook_events):
+        """ Add facebook events. """
+        batch = self.service.new_batch_http_request()
+        service = self.service.events()
+        events = self.get_events()
+        facebook_eventmap = {x['id']: x for x in facebook_events}
+        for google_event in events:
+            try:
+                facebook_event = facebook_eventmap[google_event.facebook_id]
+                batch.add(service.patch(calendarId=self['id'],
+                                        eventId=google_event['id'],
+                                        body=facebook_event.to_google()))
+            except KeyError:
+                pass
+        return batch.execute()
+
     def sync_page(self, facebook_page, tz=None):
         """ Synchronize FacebookPage object events with this calendar.
 
@@ -246,5 +273,5 @@ class GoogleEvent(GoogleObject):
     def facebook_id(self):
         """ Helper to return facebook ID of event. """
         extended_properties = self.get('extendedProperties', {})
-        private = extended_properties.get('public', {})
+        private = extended_properties.get('shared', {})
         return private.get('facebookId')

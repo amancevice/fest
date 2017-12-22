@@ -9,7 +9,7 @@ FACEBOOK_PAGE_ID = os.getenv('FACEBOOK_PAGE_ID')
 GOOGLE_CALENDAR_ID = os.getenv('GOOGLE_CALENDAR_ID')
 
 
-def sync_events(event=None, _=None):
+def sync_events(event=None, context=None):
     """ Entrypoint for AWS Lambda.
 
         Example payload:
@@ -20,6 +20,8 @@ def sync_events(event=None, _=None):
             "time_filter": "<optional-time-filter>"
         }
     """
+    # pylint: disable=unused-argument
+
     # Read event
     event = event or {}
     facebook_id = event.get('facebook_id') or FACEBOOK_PAGE_ID
@@ -36,11 +38,10 @@ def sync_events(event=None, _=None):
     page = graph.get_page(facebook_id)
     events = page.get_events(time_filter=time_filter)
 
-    # Merge events
-    gids = set(x.facebook_id for x in gevents)
-    fids = set(x['id'] for x in events if x['id'] not in gids)
-    sync = [x for x in events if x['id'] in fids]
-
-    # Sync
-    for item in sync:
-        gcal.add_event(item)
+    # Merge & Sync events
+    facebook_ids = {x.facebook_id for x in gevents}
+    for item in events:
+        if item['id'] not in facebook_ids:
+            gcal.add_event(item)
+        else:
+            gcal.patch_event(item)
