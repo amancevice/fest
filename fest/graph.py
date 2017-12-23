@@ -15,6 +15,8 @@ def authenticated(func):
     """ Authentication decorator. """
     def wrapper(graph, *args, **kwargs):
         """ Authentication wrapper. """
+        if graph.access_token is None:
+            graph.authenticate()
         try:
             return func(graph, *args, **kwargs)
         except facebook.GraphAPIError:
