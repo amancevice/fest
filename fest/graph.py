@@ -48,11 +48,11 @@ class GraphAPI(facebook.GraphAPI):
         path = '{}?fields={}'.format(page_id, ','.join(sorted(fields)))
         return FacebookPage(self, **self.get_object(path))
 
-    @authenticated
     def get_events(self, page_id, time_filter=None):
         """ Get list of page events. """
         return list(self.iter_events(page_id, time_filter))
 
+    @authenticated
     def iter_events(self, page_id, time_filter=None):
         """ Iterate over page events. """
         path = '{}/events'.format(page_id)
@@ -78,6 +78,14 @@ class FacebookObject(dict):
     def __init__(self, graph, *args, **kwargs):
         self.graph = graph
         super(FacebookObject, self).__init__(*args, **kwargs)
+
+    def get_events(self, time_filter=None):
+        """ Get list of page events. """
+        return list(self.graph.iter_events(self['id'], time_filter))
+
+    def iter_events(self, time_filter=None):
+        """ Iterate over page events. """
+        return self.graph.iter_events(self['id'], time_filter=time_filter)
 
 
 class FacebookPage(FacebookObject):
