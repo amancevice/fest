@@ -42,7 +42,7 @@ def test_graph_api_iter_events(mock_obj, mock_tok):
     assert events == [{'a': 'b'}, {'c': 'd'}]
 
 
-def test_facebook_object_init():
+def test_facebook_event_init():
     graph = fest.graph.GraphAPI('APP_ID', 'APP_SECRET')
-    obj = fest.graph.FacebookObject(graph)
-    assert obj.graph == graph
+    obj = fest.graph.FacebookEvent(graph)
+    assert obj.service == graph

@@ -3,8 +3,10 @@ Facebook Graph API tools.
 """
 import os
 from datetime import datetime
+from datetime import timedelta
 
 import facebook
+from fest import bases
 
 FACEBOOK_APP_ID = os.getenv('FACEBOOK_APP_ID')
 FACEBOOK_APP_SECRET = os.getenv('FACEBOOK_APP_SECRET')
@@ -73,32 +75,16 @@ class GraphAPI(facebook.GraphAPI):
                 break
 
 
-class FacebookObject(dict):
-    """ Base Facebook Object. """
-    LOCATION_KEYS = ('name', 'street', 'city', 'state', 'country', 'zip')
-
-    def __init__(self, graph, *args, **kwargs):
-        self.graph = graph
-        super(FacebookObject, self).__init__(*args, **kwargs)
-
-    def get_events(self, time_filter=None):
-        """ Get list of page events. """
-        return list(self.graph.iter_events(self['id'], time_filter))
-
-    def iter_events(self, time_filter=None):
-        """ Iterate over page events. """
-        return self.graph.iter_events(self['id'], time_filter=time_filter)
-
-
-class FacebookPage(FacebookObject):
+class FacebookPage(bases.BaseObject):
     """ Facebook Page Object. """
     DESCRIPTION_KEYS = ('about', 'mission')
+    LOCATION_KEYS = ('name', 'street', 'city', 'state', 'country', 'zip')
 
     def description_string(self, *keys):
         """ Get description as a string. """
         keys = keys or self.DESCRIPTION_KEYS
-        values = [self[x] for x in keys if x in self] + \
-            ["facebook#{id}".format(**self)]
+        values = [self[x] for x in keys if x in self]
+        values += ["facebook#{id}".format(**self.struct)]
         return '\n'.join(values) or None
 
     def location_string(self, *keys):
@@ -110,20 +96,17 @@ class FacebookPage(FacebookObject):
 
     def get_events(self, time_filter=None):
         """ Get list of page events. """
-        return self.graph.get_events(self['id'], time_filter)
+        return self.service.get_events(self['id'], time_filter)
 
-    def to_google(self, tz=None):  # pylint: disable=invalid-name
-        """ Convert object to Google. """
-        return {
-            'description': self.description_string(),
-            'summary': self.get('name'),
-            'location': self.location_string(),
-            "timeZone": tz
-        }
+    def iter_events(self, time_filter=None):
+        """ Iterate over page events. """
+        return self.service.iter_events(self['id'], time_filter)
 
 
-class FacebookEvent(FacebookObject):
+class FacebookEvent(bases.BaseObject):
     """ Facebook Event Object. """
+    LOCATION_KEYS = ('name', 'street', 'city', 'state', 'country', 'zip')
+
     def location_string(self, *keys):
         """ Get location info as a string. """
         keys = keys or self.LOCATION_KEYS
@@ -145,23 +128,15 @@ class FacebookEvent(FacebookObject):
         except TypeError:
             return None
 
-    def to_google(self):
-        """ Convert event to Google format. """
-        return {
-            'summary': self.get('name'),
-            'description': self.get('description'),
-            'location': self.location_string(),
-            'start': {
-                'dateTime': self.get('start_time'),
-                'timeZone': self.timezone()
-            },
-            'end': {
-                'dateTime': self.get('end_time', self.get('start_time')),
-                'timeZone': self.timezone()
-            },
-            'extendedProperties': {
-                'shared': {
-                    'facebookId': self.get('id')
-                }
-            }
-        }
+    def start_time(self):
+        """ Helper to get start_time datetime object. """
+        return datetime.strptime(self.get('start_time'), '%Y-%m-%dT%H:%M:%S%z')
+
+    def end_time(self, **delta):
+        """ Helper to get end_time datetime object. """
+        try:
+            return datetime.strptime(self.get('end_time'),
+                                     '%Y-%m-%dT%H:%M:%S%z')
+        except TypeError:
+            delta = delta or {'hours': 1}
+            return self.start_time() + timedelta(**delta)
