@@ -4,7 +4,6 @@ CLI Entrypoint
 import click
 from fest import __version__
 from fest import graph as facebook
-from fest import google
 
 
 @click.group(context_settings={'help_option_names': ['-h', '--help']})
@@ -22,9 +21,8 @@ def fest(ctx, facebook_app_id, facebook_app_secret):
         See https://github.com/amancevice/fest for details & instructions.
     """
     ctx.obj = {}
-    ctx.obj['graph'] = facebook.GraphAPI(
-        app_id=facebook_app_id,
-        app_secret=facebook_app_secret)
+    ctx.obj['graph'] = facebook.GraphAPI(app_id=facebook_app_id,
+                                         app_secret=facebook_app_secret)
 
 
 @fest.group('google')
@@ -52,6 +50,7 @@ def fest_google(ctx, google_account_type, google_client_email,
                 google_scope):
     """ Connect to Google Cloud. """
     # pylint: disable=too-many-arguments
+    from fest import google
     ctx.obj['cloud'] = google.GoogleCloud.from_credentials(
         scopes=[google_scope],
         service_type=google_account_type,
@@ -59,6 +58,30 @@ def fest_google(ctx, google_account_type, google_client_email,
         private_key=google_private_key,
         client_email=google_client_email,
         client_id=google_client_id)
+
+
+@fest.group('tribe')
+@click.option('--tribe-endpoint',
+              envvar='TRIBE_ENDPOINT',
+              help='Optional tribe REST API endpoint')
+@click.option('--wordpress-endpoint',
+              envvar='WORDPRESS_ENDPOINT',
+              help='Optional wordpress endpoint')
+@click.option('--wordpress-username',
+              envvar='WORDPRESS_USERNAME',
+              help='Optional wordpress username')
+@click.option('--wordpress-app-password',
+              envvar='WORDPRESS_APP_PASSWORD',
+              help='Optional WordPress app password')
+@click.pass_context
+def fest_tribe(ctx, tribe_endpoint, wordpress_endpoint, wordpress_username,
+               wordpress_app_password):
+    """ Connect to Tribe. """
+    from fest import tribe
+    wordpress = tribe.WordPress(url=wordpress_endpoint,
+                                username=wordpress_username,
+                                password=wordpress_app_password)
+    ctx.obj['tribe'] = tribe.TribeCalendar(wordpress, tribe_endpoint)
 
 
 @fest_google.command('clear')
@@ -159,6 +182,42 @@ def fest_google_sync(ctx, facebook_id, google_id, sync_all):
 
     click.echo('Synchronizing Events')
     gcal.sync_events(*events)
+
+
+@fest_tribe.command('shell')
+@click.pass_context
+def fest_tribe_shell(ctx):
+    """ Sync a facebook page. """
+    # pylint: disable=unused-variable
+    try:
+        import IPython
+        graph = ctx.obj['graph']
+        tribe = ctx.obj['tribe']
+        IPython.embed()
+    except ImportError:
+        click.echo('Please install IPython to use the shell.')
+
+
+@fest_tribe.command('sync')
+@click.option('-f', '--facebook-id',
+              envvar='FACEBOOK_PAGE_ID',
+              help='Facebook Page ID')
+@click.option('-a', '--sync-all',
+              help='Sync all events, not just upcoming',
+              is_flag=True)
+@click.pass_context
+def fest_tribe_sync(ctx, facebook_id, sync_all):
+    """ Sync a facebook page. """
+    click.echo('Fetching Tribe Calendar')
+    tribe = ctx.obj['tribe']
+
+    click.echo('Fetching Facebook Events: {}'.format(facebook_id))
+    page = ctx.obj['graph'].get_page(facebook_id)
+    time_filter = None if sync_all else 'upcoming'
+    events = page.get_events(time_filter=time_filter)
+
+    click.echo('Synchronizing Events')
+    tribe.sync_events(*events)
 
 
 if __name__ == '__main__':
