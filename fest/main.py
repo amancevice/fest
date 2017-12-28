@@ -15,6 +15,19 @@ from fest import google
 @click.option('--facebook-app-secret',
               envvar='FACEBOOK_APP_SECRET',
               help='Optional facebook app secret')
+@click.pass_context
+def fest(ctx, facebook_app_id, facebook_app_secret):
+    """ Export Facebook Page Events to other services.
+
+        See https://github.com/amancevice/fest for details & instructions.
+    """
+    ctx.obj = {}
+    ctx.obj['graph'] = facebook.GraphAPI(
+        app_id=facebook_app_id,
+        app_secret=facebook_app_secret)
+
+
+@fest.group('google')
 @click.option('--google-account-type',
               envvar='GOOGLE_ACCOUNT_TYPE',
               help='Optional Google service account type')
@@ -34,18 +47,11 @@ from fest import google
               envvar='GOOGLE_SCOPE',
               help='Optional Google service scope')
 @click.pass_context
-def fest(ctx, facebook_app_id, facebook_app_secret, google_account_type,
-         google_client_email, google_client_id, google_private_key,
-         google_private_key_id, google_scope):
-    """ Export Facebook Page Events to other services.
-
-        See https://github.com/amancevice/fest for details & instructions.
-    """
+def fest_google(ctx, google_account_type, google_client_email,
+                google_client_id, google_private_key, google_private_key_id,
+                google_scope):
+    """ Connect to Google Cloud. """
     # pylint: disable=too-many-arguments
-    ctx.obj = {}
-    ctx.obj['graph'] = facebook.GraphAPI(
-        app_id=facebook_app_id,
-        app_secret=facebook_app_secret)
     ctx.obj['cloud'] = google.GoogleCloud.from_credentials(
         scopes=[google_scope],
         service_type=google_account_type,
@@ -55,7 +61,7 @@ def fest(ctx, facebook_app_id, facebook_app_secret, google_account_type,
         client_id=google_client_id)
 
 
-@fest.command('clear')
+@fest_google.command('clear')
 @click.option('-f', '--force',
               default=False,
               help='Do not prompt before clearing',
@@ -65,14 +71,14 @@ def fest(ctx, facebook_app_id, facebook_app_secret, google_account_type,
               envvar='GOOGLE_CALENDAR_ID',
               help='Google Calendar ID')
 @click.pass_context
-def fest_clear(ctx, force, google_id):
+def fest_google_clear(ctx, force, google_id):
     """ Clear a linked Google Calendar. """
     gcal = ctx.obj['cloud'].get_calendar(google_id)
     if force is True:
         gcal.clear_events()
 
 
-@fest.command('create')
+@fest_google.command('create')
 @click.option('-f', '--facebook-id',
               envvar='FACEBOOK_PAGE_ID',
               help='Facebook Page ID')
@@ -80,7 +86,7 @@ def fest_clear(ctx, force, google_id):
               required=True,
               help='Time zone of calendar')
 @click.pass_context
-def fest_create(ctx, facebook_id, tz):
+def fest_google_create(ctx, facebook_id, tz):
     """ Create a new Google Calendar. """
     # pylint: disable=invalid-name,unused-variable
     page = ctx.obj['graph'].get_page(facebook_id)
@@ -88,7 +94,7 @@ def fest_create(ctx, facebook_id, tz):
     click.echo(gcal['id'])
 
 
-@fest.command('destroy')
+@fest_google.command('destroy')
 @click.option('-f', '--force',
               default=False,
               help='Do not prompt before destroying',
@@ -98,26 +104,27 @@ def fest_create(ctx, facebook_id, tz):
               envvar='GOOGLE_CALENDAR_ID',
               help='Google Calendar ID')
 @click.pass_context
-def fest_destroy(ctx, force, google_id):
+def fest_google_destroy(ctx, force, google_id):
     """ Create a new Google Calendar. """
     if force is True:
         ctx.obj['cloud'].delete_calendar(google_id)
 
 
+@fest_google.command('share')
 @click.option('-e', '--email', help='Email of new owner for calendar')
 @click.option('-g', '--google-id',
               envvar='GOOGLE_CALENDAR_ID',
               help='Google Calendar ID')
-@fest.command('share')
-def fest_share(ctx, email, google_id):
+@click.pass_context
+def fest_google_share(ctx, email, google_id):
     """ Grant ownership of Google Calendar to user. """
     gcal = ctx.obj['cloud'].get_calendar(google_id)
     gcal.add_owner(email)
 
 
-@fest.command('shell')
+@fest_google.command('shell')
 @click.pass_context
-def fest_shell(ctx):
+def fest_google_shell(ctx):
     """ Sync a facebook page. """
     # pylint: disable=unused-variable
     try:
@@ -129,7 +136,7 @@ def fest_shell(ctx):
         click.echo('Please install IPython to use the shell.')
 
 
-@fest.command('sync')
+@fest_google.command('sync')
 @click.option('-f', '--facebook-id',
               envvar='FACEBOOK_PAGE_ID',
               help='Facebook Page ID')
@@ -140,28 +147,18 @@ def fest_shell(ctx):
               help='Sync all events, not just upcoming',
               is_flag=True)
 @click.pass_context
-def fest_sync(ctx, facebook_id, google_id, sync_all):
+def fest_google_sync(ctx, facebook_id, google_id, sync_all):
     """ Sync a facebook page. """
-    click.echo('Fetching Google Events: {}'.format(google_id))
+    click.echo('Fetching Google Calendar: {}'.format(google_id))
     gcal = ctx.obj['cloud'].get_calendar(google_id)
-    gevents = gcal.get_events()
 
     click.echo('Fetching Facebook Events: {}'.format(facebook_id))
     page = ctx.obj['graph'].get_page(facebook_id)
     time_filter = None if sync_all else 'upcoming'
     events = page.get_events(time_filter=time_filter)
 
-    click.echo('Merging Events')
-    gids = set(x.facebook_id for x in gevents)
-    fids = set(x['id'] for x in events if x['id'] not in gids)
-    sync = [x for x in events if x['id'] in fids]
-
-    click.echo('Syncing {} Events'.format(len(sync)))
-    for event in sync:
-        click.echo('-> {} :: {} :: {}'.format(event['start_time'],
-                                              event['id'],
-                                              event['name']))
-        gcal.add_event(event)
+    click.echo('Synchronizing Events')
+    gcal.sync_events(*events)
 
 
 if __name__ == '__main__':
