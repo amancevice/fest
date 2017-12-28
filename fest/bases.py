@@ -2,6 +2,7 @@
 Base objects
 """
 import collections
+import hashlib
 import json
 
 
@@ -22,7 +23,11 @@ class BaseObject(collections.Mapping):
         return len(self.struct)
 
     def __repr__(self):
-        return json.dumps(self.struct, indent=2, sort_keys=True)
+        return str(self)
 
     def __str__(self):
-        return str(self.struct)
+        return json.dumps(self.struct, indent=2, sort_keys=True)
+
+    def digest(self):
+        """ Return SHA-1 of struct. """
+        return hashlib.sha1(str(self).encode('utf-8')).hexdigest()

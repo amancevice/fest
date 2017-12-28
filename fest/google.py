@@ -126,24 +126,15 @@ class GoogleCalendar(bases.BaseObject):
 
         :param object service: GoogleCloud instance
     """
-    def add_events(self, *facebook_events):
-        """ Add facebook events. """
-        batch = self.service.new_batch_http_request()
-        service = self.service.events()
-        for event in facebook_events:
-            google_event = GoogleEvent.from_facebook(event, self.service)
-            batch.add(service.insert(calendarId=self['id'],
-                                     body=google_event.struct))
-        return batch.execute()
-
     def add_event(self, facebook_event):
         """ Add facebook event.
 
             :param object facebook_event: FacebookEvent instance
         """
-        event = GoogleEvent.from_facebook(facebook_event, self.service)
+        insert_event = GoogleEvent.from_facebook(facebook_event, self.service)
         service = self.service.events()
-        request = service.insert(calendarId=self['id'], body=event)
+        request = service.insert(calendarId=self['id'],
+                                 body=insert_event.struct)
         return request.execute()
 
     def add_owner(self, email):
@@ -219,57 +210,63 @@ class GoogleCalendar(bases.BaseObject):
             except KeyError:
                 break
 
-    def patch_event(self, facebook_event):
+    def patch_event(self, facebook_event, google_event):
         """ Patch facebook event.
 
             :param object facebook_event: FacebookEvent instance
         """
-        event = GoogleEvent.from_facebook(facebook_event)
+        patch_event = GoogleEvent.from_facebook(facebook_event, self.service)
         service = self.service.events()
+        request = service.patch(calendarId=self['id'],
+                                eventId=google_event['id'],
+                                body=patch_event.struct)
+        return request.execute()
+
+    def sync_event(self, facebook_event):
+        """ Synchronize facebook event with calendar.
+
+            :param object facebook_event: Facebook event instance
+        """
+        # Attempt to patch existing event
         for google_event in self.iter_events():
             if google_event.facebook_id == facebook_event['id']:
-                request = service.patch(calendarId=self['id'],
-                                        eventId=google_event['id'],
-                                        body=event)
-                return request.execute()
-        return None
+                # Apply patch
+                if google_event.facebook_digest != facebook_event.digest():
+                    return self.patch_event(facebook_event, google_event)
+                # No op
+                return None
+        # Add event if no events can be patched
+        return self.add_event(facebook_event)
 
-    def patch_events(self, *facebook_events):
-        """ Add facebook events.
+    def sync_events(self, *facebook_events):
+        """ Synchronize facebook events with calendar.
 
-            :param tuple(object) facebook_events: FacebookEvent instances
+            :param tuple facebook_events: Facebook event instances
         """
+        eventmap = {x.facebook_id: x for x in self.iter_events()}
         batch = self.service.new_batch_http_request()
         service = self.service.events()
-        events = self.get_events()
-        facebook_eventmap = {x['id']: x for x in facebook_events}
-        for event in events:
-            try:
-                facebook_event = facebook_eventmap[event.facebook_id]
-                google_event = GoogleEvent.from_facebook(facebook_event)
-                batch.add(service.patch(calendarId=self['id'],
-                                        eventId=google_event['id'],
-                                        body=google_event))
-            except KeyError:
-                pass
-        return batch.execute()
 
-    def sync_page(self, facebook_page, tz):
-        """ Synchronize FacebookPage object events with this calendar.
+        # Add or patch facebook events
+        for facebook_event in facebook_events:
+            # Patch event if digests differ (otherwise no op)
+            if facebook_event['id'] in eventmap:
+                google_event = eventmap[facebook_event['id']]
+                if google_event.facebook_digest != facebook_event.digest():
+                    patch_event = GoogleEvent.from_facebook(facebook_event)
+                    request = service.patch(calendarId=self['id'],
+                                            eventId=google_event['id'],
+                                            body=patch_event.struct)
+                    batch.add(request)
+            # Insert new event
+            elif facebook_event['id'] not in eventmap:
+                insert_event = GoogleEvent.from_facebook(facebook_event)
+                request = service.insert(calendarId=self['id'],
+                                         body=insert_event.struct)
+                batch.add(request)
 
-            :param object facebook_page: FacebookPage instance
-            :param str tz: Time zone of facebook page
-        """
-        # pylint: disable=invalid-name
-        batch = self.service.new_batch_http_request()
-        calendars = self.service.calendars()
-        events = self.service.events()
-        batch.add(calendars.patch(calendarId=self['id'],
-                                  body=facebook_page.to_google(tz)))
-        for event in facebook_page.iter_events():
-            batch.add(events.insert(calendarId=self['id'],
-                                    body=event.to_google()))
-        return batch.execute()
+        # Execute batch request
+        batch.execute()
 
 
 class GoogleEvent(bases.BaseObject):
@@ -284,6 +281,16 @@ class GoogleEvent(bases.BaseObject):
         private = extended_properties.get('shared', {})
         return private.get('facebookId')
 
+    @property
+    def facebook_digest(self):
+        """ Helper to return facebook digest of event.
+
+            :returns str: FacebookEvent ID
+        """
+        extended_properties = self.get('extendedProperties', {})
+        private = extended_properties.get('shared', {})
+        return private.get('digest')
+
     @staticmethod
     def from_facebook(facebook_event, service=None):
         """ Helper to convert a FacebookEvent to a GoogleEvent.
@@ -292,18 +299,20 @@ class GoogleEvent(bases.BaseObject):
             :param object service: Optional GoogleCloud service instance
             :returns object: GoogleEvent instance
         """
-        start_time = facebook_event.get('start_time')
-        end_time = facebook_event.get('end_time', start_time)
+        start_time = facebook_event.start_time()
+        end_time = facebook_event.end_time()
         google_event = GoogleEvent(
             service=service,
             summary=facebook_event.get('name'),
             description=facebook_event.get('description'),
             location=facebook_event.location_string(),
-            start={'dateTime': start_time,
+            start={'dateTime': start_time.strftime('%Y-%m-%dT%H:%M:%S'),
                    'timeZone': facebook_event.timezone()},
-            end={'dateTime': end_time, 'timeZone': facebook_event.timezone()},
+            end={'dateTime': end_time.strftime('%Y-%m-%dT%H:%M:%S'),
+                 'timeZone': facebook_event.timezone()},
             extendedProperties={
-                'shared': {'facebookId': facebook_event.get('id')}})
+                'shared': {'facebookId': facebook_event.get('id'),
+                           'digest': facebook_event.digest()}})
         return google_event
 
 

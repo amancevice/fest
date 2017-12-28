@@ -28,20 +28,12 @@ def sync_events(event=None, context=None):
     google_id = event.get('google_id') or GOOGLE_CALENDAR_ID
     time_filter = event.get('time_filter')
 
-    # Get google calendar
-    cloud = fest.GoogleCloud.from_env()
-    gcal = cloud.get_calendar(google_id)
-    gevents = gcal.get_events()
-
     # Get facebook events
     graph = fest.GraphAPI()
     page = graph.get_page(facebook_id)
     events = page.get_events(time_filter=time_filter)
 
-    # Merge & Sync events
-    facebook_ids = {x.facebook_id for x in gevents}
-    for item in events:
-        if item['id'] not in facebook_ids:
-            gcal.add_event(item)
-        else:
-            gcal.patch_event(item)
+    # Sync events
+    cloud = fest.GoogleCloud.from_env()
+    gcal = cloud.get_calendar(google_id)
+    gcal.sync_events(*events)

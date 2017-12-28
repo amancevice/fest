@@ -3,7 +3,14 @@ Facebook Events Sync
 """
 import pkg_resources
 from fest.graph import GraphAPI
-from fest.google import GoogleCloud
+try:
+    from fest.google import GoogleCloud
+except ImportError:
+    pass
+try:
+    from fest.tribe import TribeClient
+except ImportError:
+    pass
 
 try:
     __version__ = pkg_resources.get_distribution(__package__).version
