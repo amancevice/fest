@@ -131,7 +131,7 @@ class GoogleCalendar(bases.BaseObject):
 
             :param object facebook_event: FacebookEvent instance
         """
-        insert_event = GoogleEvent.from_facebook(facebook_event, self.service)
+        insert_event = facebook_event.to_google()
         service = self.service.events()
         request = service.insert(calendarId=self['id'],
                                  body=insert_event.struct)
@@ -169,8 +169,7 @@ class GoogleCalendar(bases.BaseObject):
     def get_event(self, google_id):
         """ Get event by Google ID.
 
-            :param google_id: ID of facebook page
-            :type google_id: str
+            :param str google_id: ID of facebook page
             :returns object: GoogleEvent instance
         """
         service = self.service.events()
@@ -182,8 +181,7 @@ class GoogleCalendar(bases.BaseObject):
 
             Searches 'extendedProperties :: private :: facebookId'
 
-            :param facebook_id: ID of facebook page
-            :type facebook_id: str
+            :param str facebook_id: ID of facebook page
             :returns object: GoogleEvent instance
         """
         for event in self.iter_events():
@@ -214,8 +212,9 @@ class GoogleCalendar(bases.BaseObject):
         """ Patch facebook event.
 
             :param object facebook_event: FacebookEvent instance
+            :param object google_event: GoogleEvent instance
         """
-        patch_event = GoogleEvent.from_facebook(facebook_event, self.service)
+        patch_event = facebook_event.to_google()
         service = self.service.events()
         request = service.patch(calendarId=self['id'],
                                 eventId=google_event['id'],
@@ -253,14 +252,14 @@ class GoogleCalendar(bases.BaseObject):
             if facebook_event['id'] in eventmap:
                 google_event = eventmap[facebook_event['id']]
                 if google_event.facebook_digest != facebook_event.digest():
-                    patch_event = GoogleEvent.from_facebook(facebook_event)
+                    patch_event = facebook_event.to_google()
                     request = service.patch(calendarId=self['id'],
                                             eventId=google_event['id'],
                                             body=patch_event.struct)
                     batch.add(request)
             # Insert new event
             elif facebook_event['id'] not in eventmap:
-                insert_event = GoogleEvent.from_facebook(facebook_event)
+                insert_event = facebook_event.to_google()
                 request = service.insert(calendarId=self['id'],
                                          body=insert_event.struct)
                 batch.add(request)

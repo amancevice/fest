@@ -26,7 +26,10 @@ class BaseObject(collections.Mapping):
         return str(self)
 
     def __str__(self):
-        return json.dumps(self.struct, indent=2, sort_keys=True)
+        try:
+            return json.dumps(self.struct, indent=2, sort_keys=True)
+        except TypeError:
+            return str(self.struct)
 
     def digest(self):
         """ Return SHA-1 of struct. """
