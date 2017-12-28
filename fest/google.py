@@ -184,9 +184,9 @@ class GoogleCalendar(bases.BaseObject):
             :param str facebook_id: ID of facebook page
             :returns object: GoogleEvent instance
         """
-        for event in self.iter_events():
-            if facebook_id == event.facebook_id:
-                return event
+        for google_event in self.iter_events():
+            if facebook_id == google_event.facebook_id:
+                return google_event
         return None
 
     def iter_events(self):

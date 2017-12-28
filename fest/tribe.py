@@ -25,6 +25,7 @@ class WordPress(wp.Client):
     """
     def __init__(self, url=None, username=None, password=None, blog_id=0,
                  transport=None):
+        # pylint: disable=too-many-arguments
         endpoint = url or WORDPRESS_ENDPOINT
         username = username or WORDPRESS_USERNAME
         password = password or WORDPRESS_APP_PASSWORD
@@ -57,7 +58,7 @@ class TribeCalendar(object):
         :param object wordpress: WordPress XML RPC client instance
         :param str endpoint: URL of tribe events REST service
     """
-    STATIC_CUSTOM_FIELDS = ()
+    STATIC_CUSTOM_FIELDS = []
 
     def __init__(self, wordpress=None, endpoint=None,
                  static_custom_fields=None):
@@ -67,22 +68,22 @@ class TribeCalendar(object):
             self.STATIC_CUSTOM_FIELDS
 
     @classmethod
-    def set_static_custom_fields(cls, *custom_fields):
+    def set_static_custom_fields(cls, custom_fields):
         """ Set STATIC_CUSTOM_FIELDS value for TribeEvent instances.
 
-            :param tuple custom_fields: Custom fields for WordPress post
+            :param list[dict] custom_fields: Custom fields for WordPress post
         """
         cls.STATIC_CUSTOM_FIELDS = custom_fields
 
-    def add_event(self, facebook_event, *custom_fields):
+    def add_event(self, facebook_event, custom_fields=None):
         """ Add facebook event.
 
             :param object facebook_event: FacebookEvent instance
-            :param tuple custom_fields: Custom fields for WordPress post
+            :param list[dict] custom_fields: Custom fields for WordPress post
         """
         # Create WordPress post
         post = wp.WordPressPost()
-        post.custom_fields = list(custom_fields + self.static_custom_fields)
+        post.custom_fields = (custom_fields or []) + self.static_custom_fields
         post.custom_fields += [
             {'key': 'facebook_id', 'value': facebook_event['id']},
             {'key': 'facebook_digest', 'value': facebook_event.digest()}]
@@ -117,14 +118,14 @@ class TribeCalendar(object):
     def get_facebook_event(self, facebook_id):
         """ Get event by facebook ID.
 
-            Searches 'extendedProperties :: private :: facebookId'
+            Searches custom_fields for 'facebook_id'
 
             :param str facebook_id: ID of facebook page
             :returns object: GoogleEvent instance
         """
-        for event in self.iter_events():
-            if facebook_id == event.facebook_id:
-                return event
+        for tribe_event in self.iter_events():
+            if facebook_id == tribe_event.facebook_id:
+                return tribe_event
         return None
 
     def iter_events(self, **kwargs):
@@ -167,6 +168,7 @@ class TribeCalendar(object):
             url = "{}/events/{}".format(self.endpoint, post.id)
             headers = self.basic_auth()
             return requests.post(url, headers=headers, json=patch_event.struct)
+        return None
 
     def sync_event(self, facebook_event):
         """ Synchronize facebook event with tribe calendar.
@@ -189,19 +191,8 @@ class TribeCalendar(object):
 
             :param tuple facebook_events: Facebook event instances
         """
-        eventmap = {x.facebook_id: x for x in self.iter_events()
-                    if x.facebook_id}
-
-        # Add or patch facebook events
         for facebook_event in facebook_events:
-            # Patch event if digests differ (otherwise no op)
-            if facebook_event['id'] in eventmap:
-                tribe_event = eventmap[facebook_event['id']]
-                if tribe_event.facebook_digest != facebook_event.digest():
-                    self.patch_event(facebook_event, tribe_event)
-            # Insert new event
-            elif facebook_event['id'] not in eventmap:
-                self.add_event(facebook_event)
+            self.sync_event(facebook_event)
 
 
 class TribeEvent(bases.BaseObject):
