@@ -8,7 +8,7 @@ try:
 except ImportError:
     pass
 try:
-    from fest.tribe import TribeClient
+    from fest.tribe import TribeCalendar
 except ImportError:
     pass
 
