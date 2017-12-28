@@ -29,7 +29,7 @@ def sync_events(event=None, context=None):
     time_filter = event.get('time_filter')
 
     # Get google calendar
-    cloud = fest.CalendarAPI.from_env()
+    cloud = fest.GoogleCloud.from_env()
     gcal = cloud.get_calendar(google_id)
     gevents = gcal.get_events()
 

@@ -1,11 +1,13 @@
 """
-Google Cloud tools
+Google Cloud tools.
 """
 import os
 
 import httplib2
 from apiclient import discovery
 from oauth2client import service_account
+from fest import graph
+from fest import bases
 
 GOOGLE_ACCOUNT_TYPE = os.getenv('GOOGLE_ACCOUNT_TYPE')
 GOOGLE_CALENDAR_ID = os.getenv('GOOGLE_CALENDAR_ID')
@@ -16,11 +18,10 @@ GOOGLE_PRIVATE_KEY_ID = os.getenv('GOOGLE_PRIVATE_KEY_ID')
 GOOGLE_SCOPE = os.getenv('GOOGLE_SCOPE')
 
 
-class CalendarAPI(object):
-    """ Google Calendar API Service.
+class GoogleCloud(object):
+    """ Google Cloud Service.
 
-        :param service: Google Cloud service resource
-        :type service: googleapiclient.discovery.Resource
+        :param object service: Google Cloud service resource
     """
     @classmethod
     def from_env(cls):
@@ -33,18 +34,12 @@ class CalendarAPI(object):
                          client_email=None, client_id=None):
         """ Create CalendarAPI object from credentials
 
-            :param scopes: List of service scopes
-            :param service_type: Google service type
-            :param private_key_id: Google private key ID
-            :param private_key: Google private key
-            :param client_email: Google client email
-            :param client_id: Google client ID
-            :type scopes: list
-            :type service_type: str
-            :type private_key_id: str
-            :type private_key: str
-            :type client_email: str
-            :type client_id: str
+            :param list[str] scopes: List of service scopes
+            :param str service_type: Google service type
+            :param str private_key_id: Google private key ID
+            :param str private_key: Google private key
+            :param str client_email: Google client email
+            :param str client_id: Google client ID
         """
         # pylint: disable=too-many-arguments
         keyfile_dict = {
@@ -66,13 +61,11 @@ class CalendarAPI(object):
     def __init__(self, service):
         self.service = service
 
-    def create_calendar(self, facebook_page, tz=None):
+    def create_calendar(self, facebook_page, tz):
         """ Create calendar from FacebookPage object.
 
-            :param facebook_page: Facebook page object
-            :param tz: Time zone of facebook page
-            :type facebook_page: fest.graph.FacebookPage
-            :type tz: str
+            :param object facebook_page: Facebook page object
+            :param str tz: Timezone of facebook page
         """
         # pylint: disable=invalid-name,no-member
         service = self.service.calendars()
@@ -82,8 +75,7 @@ class CalendarAPI(object):
     def delete_calendar(self, google_id):
         """ Create calendar from FacebookPage object.
 
-            :param google_id: Google calendar ID
-            :type google_id: str
+            :param str google_id: Google calendar ID
         """
         # pylint: disable=invalid-name,no-member
         service = self.service.calendars()
@@ -105,8 +97,7 @@ class CalendarAPI(object):
 
             Searches descriptions for "facebook#<facebook_id>.
 
-            :param facebook_id: ID of facebook page
-            :type facebook_id: str
+            :param str facebook_id: ID of facebook page
         """
         key = 'facebook#{}'.format(facebook_id)
         for cal in self.iter_calendars():
@@ -120,43 +111,46 @@ class CalendarAPI(object):
         request = service.list()
         result = request.execute()
         for item in result.get('items', []):
-            yield GoogleCalendar(self.service, item)
+            yield GoogleCalendar(self.service, **item)
         try:
             request = service.list(syncToken=result['nextSyncToken'])
             result = request.execute()
             for item in result.get('items', []):
-                yield GoogleCalendar(self.service, item)
+                yield GoogleCalendar(self.service, **item)
         except KeyError:
             pass
 
 
-class GoogleObject(dict):
-    """ Google Object. """
-    def __init__(self, service, *args, **kwargs):
-        self.service = service
-        super(GoogleObject, self).__init__(*args, **kwargs)
+class GoogleCalendar(bases.BaseObject):
+    """ Google Calendar Object.
 
-
-class GoogleCalendar(GoogleObject):
-    """ Google Calendar Object. """
+        :param object service: GoogleCloud instance
+    """
     def add_events(self, *facebook_events):
         """ Add facebook events. """
         batch = self.service.new_batch_http_request()
         service = self.service.events()
         for event in facebook_events:
+            google_event = GoogleEvent.from_facebook(event, self.service)
             batch.add(service.insert(calendarId=self['id'],
-                                     body=event.to_google()))
+                                     body=google_event.struct))
         return batch.execute()
 
     def add_event(self, facebook_event):
-        """ Add facebook event. """
+        """ Add facebook event.
+
+            :param object facebook_event: FacebookEvent instance
+        """
+        event = GoogleEvent.from_facebook(facebook_event, self.service)
         service = self.service.events()
-        request = service.insert(calendarId=self['id'],
-                                 body=facebook_event.to_google())
+        request = service.insert(calendarId=self['id'], body=event)
         return request.execute()
 
     def add_owner(self, email):
-        """ Give ownership to user by email. """
+        """ Give ownership to user by email.
+
+            :param str email: Owner email address
+        """
         acl = {'scope': {'type': 'user', 'value': email},
                'kind': 'calendar#aclRule',
                'role': 'owner'}
@@ -175,7 +169,10 @@ class GoogleCalendar(GoogleObject):
         return batch.execute()
 
     def get_events(self):
-        """ Get events in calendar. """
+        """ Get events in calendar.
+
+            :returns list[object]: List of GoogleEvent
+        """
         return list(self.iter_events())
 
     def get_event(self, google_id):
@@ -183,6 +180,7 @@ class GoogleCalendar(GoogleObject):
 
             :param google_id: ID of facebook page
             :type google_id: str
+            :returns object: GoogleEvent instance
         """
         service = self.service.events()
         request = service.get(calendarId=self['id'], eventId=google_id)
@@ -195,6 +193,7 @@ class GoogleCalendar(GoogleObject):
 
             :param facebook_id: ID of facebook page
             :type facebook_id: str
+            :returns object: GoogleEvent instance
         """
         for event in self.iter_events():
             if facebook_id == event.facebook_id:
@@ -211,7 +210,7 @@ class GoogleCalendar(GoogleObject):
         while True:
             try:
                 request = service.list(calendarId=self['id'],
-                                       pageToken=result['nextPageToken'],)
+                                       pageToken=result['nextPageToken'])
                 result = request.execute()
                 for item in result.get('items', []):
                     yield GoogleEvent(self.service, **item)
@@ -221,39 +220,45 @@ class GoogleCalendar(GoogleObject):
                 break
 
     def patch_event(self, facebook_event):
-        """ Patch facebook event. """
+        """ Patch facebook event.
+
+            :param object facebook_event: FacebookEvent instance
+        """
+        event = GoogleEvent.from_facebook(facebook_event)
         service = self.service.events()
         for google_event in self.iter_events():
             if google_event.facebook_id == facebook_event['id']:
                 request = service.patch(calendarId=self['id'],
                                         eventId=google_event['id'],
-                                        body=facebook_event.to_google())
+                                        body=event)
                 return request.execute()
         return None
 
     def patch_events(self, *facebook_events):
-        """ Add facebook events. """
+        """ Add facebook events.
+
+            :param tuple(object) facebook_events: FacebookEvent instances
+        """
         batch = self.service.new_batch_http_request()
         service = self.service.events()
         events = self.get_events()
         facebook_eventmap = {x['id']: x for x in facebook_events}
-        for google_event in events:
+        for event in events:
             try:
-                facebook_event = facebook_eventmap[google_event.facebook_id]
+                facebook_event = facebook_eventmap[event.facebook_id]
+                google_event = GoogleEvent.from_facebook(facebook_event)
                 batch.add(service.patch(calendarId=self['id'],
                                         eventId=google_event['id'],
-                                        body=facebook_event.to_google()))
+                                        body=google_event))
             except KeyError:
                 pass
         return batch.execute()
 
-    def sync_page(self, facebook_page, tz=None):
+    def sync_page(self, facebook_page, tz):
         """ Synchronize FacebookPage object events with this calendar.
 
-            :param facebook_page: Facebook page object
-            :param tz: Time zone of facebook page
-            :type facebook_page: fest.graph.FacebookPage
-            :type tz: str
+            :param object facebook_page: FacebookPage instance
+            :param str tz: Time zone of facebook page
         """
         # pylint: disable=invalid-name
         batch = self.service.new_batch_http_request()
@@ -267,11 +272,39 @@ class GoogleCalendar(GoogleObject):
         return batch.execute()
 
 
-class GoogleEvent(GoogleObject):
+class GoogleEvent(bases.BaseObject):
     """ Google Event Object. """
     @property
     def facebook_id(self):
-        """ Helper to return facebook ID of event. """
+        """ Helper to return facebook ID of event.
+
+            :returns str: FacebookEvent ID
+        """
         extended_properties = self.get('extendedProperties', {})
         private = extended_properties.get('shared', {})
         return private.get('facebookId')
+
+    @staticmethod
+    def from_facebook(facebook_event, service=None):
+        """ Helper to convert a FacebookEvent to a GoogleEvent.
+
+            :param object facebook_event: FacebookEvent instance
+            :param object service: Optional GoogleCloud service instance
+            :returns object: GoogleEvent instance
+        """
+        start_time = facebook_event.get('start_time')
+        end_time = facebook_event.get('end_time', start_time)
+        google_event = GoogleEvent(
+            service=service,
+            summary=facebook_event.get('name'),
+            description=facebook_event.get('description'),
+            location=facebook_event.location_string(),
+            start={'dateTime': start_time,
+                   'timeZone': facebook_event.timezone()},
+            end={'dateTime': end_time, 'timeZone': facebook_event.timezone()},
+            extendedProperties={
+                'shared': {'facebookId': facebook_event.get('id')}})
+        return google_event
+
+
+graph.FacebookEvent.to_google = GoogleEvent.from_facebook

@@ -46,7 +46,7 @@ def fest(ctx, facebook_app_id, facebook_app_secret, google_account_type,
     ctx.obj['graph'] = facebook.GraphAPI(
         app_id=facebook_app_id,
         app_secret=facebook_app_secret)
-    ctx.obj['cloud'] = google.CalendarAPI.from_credentials(
+    ctx.obj['cloud'] = google.GoogleCloud.from_credentials(
         scopes=[google_scope],
         service_type=google_account_type,
         private_key_id=google_private_key_id,
