@@ -8,7 +8,7 @@ ALL = CLI + GOOGLE + TRIBE
 
 
 setup(name='fest',
-      version='0.2.0a3',
+      version='0.2.0a4',
       author='amancevice',
       author_email='smallweirdnum@gmail.com',
       packages=['fest'],
