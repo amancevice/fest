@@ -290,8 +290,13 @@ class CalendarAPI(bases.BaseAPI):
                                      calendar_id,
                                      google_event['id'],
                                      facebook_event['id'])
+                else:
+                    self.logger.debug('NO-OP %s/%s[%s]',
+                                      calendar_id,
+                                      google_event['id'],
+                                      facebook_event['id'])
             # Insert new event
-            elif facebook_event['id'] not in eventmap:
+            else:
                 insert_event = facebook_event.to_google()
                 request = service.insert(calendarId=calendar_id,
                                          body=insert_event.struct)
