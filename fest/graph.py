@@ -57,23 +57,46 @@ class GraphAPI(bases.BaseAPI):
                 self.service.app_id, self.service.app_secret)
 
     def get_page(self, page_id, *fields):
-        """ Get facebook page. """
+        """ Get facebook page.
+
+            :param str page_id: facebook page ID
+            :param tuple(str) fields: Optional page fields
+        """
         fields = {'about', 'location', 'mission', 'name'} | set(fields)
         path = '{}?fields={}'.format(page_id, ','.join(sorted(fields)))
         return FacebookPage(self, **self.get_object(path))
 
+    def get_event(self, event_id):
+        """ Get page event.
+
+            :param str event_id: facebook event ID
+        """
+        return FacebookEvent(self, **self.get_object(event_id))
+
     def get_events(self, page_id, time_filter=None):
-        """ Get list of page events. """
+        """ Get list of page events.
+
+            :param str page_id: facebook page ID
+            :param str time_filter: Optional time filter
+        """
         return list(self.iter_events(page_id, time_filter))
 
     @authenticated
     def get_object(self, facebook_id, **args):
-        """ Get facebook object. """
+        """ Get facebook object.
+
+            :param str facebook_id: facebook object ID
+            :param dict args: Optional additional arguments
+        """
         self.logger.info('GET /%s %r', facebook_id, args)
         return self.service.get_object(facebook_id, **args)
 
     def iter_events(self, page_id, time_filter=None):
-        """ Iterate over page events. """
+        """ Iterate over page events.
+
+            :param str page_id: facebook page ID
+            :param str time_filter: Optional time filter
+        """
         path = '{}/events'.format(page_id)
         if time_filter:
             path += '?time_filter={}'.format(time_filter)
@@ -96,25 +119,44 @@ class FacebookPage(bases.BaseObject):
     LOCATION_KEYS = ('name', 'street', 'city', 'state', 'country', 'zip')
 
     def description_string(self, *keys):
-        """ Get description as a string. """
+        """ Get description as a string.
+
+            :param tuple(str) keys: Optional keys to use in building string
+        """
         keys = keys or self.DESCRIPTION_KEYS
         values = [self[x] for x in keys if x in self]
         values += ["facebook#{id}".format(**self.struct)]
         return '\n'.join(values) or None
 
     def location_string(self, *keys):
-        """ Get location info as a string. """
+        """ Get location info as a string.
+
+            :param tuple(str) keys: Optional keys to use in building string
+        """
         keys = keys or self.LOCATION_KEYS
         location = self.get('location', {})
         values = [str(location[x]) for x in keys if x in location]
         return ' '.join(values) or None
 
+    def get_event(self, event_id):
+        """ Get page event.
+
+            :param str event_id: facebook event ID
+        """
+        return self.service.get_event(event_id)
+
     def get_events(self, time_filter=None):
-        """ Get list of page events. """
+        """ Get list of page events.
+
+            :param str time_filter: Optional time filter
+        """
         return self.service.get_events(self['id'], time_filter)
 
     def iter_events(self, time_filter=None):
-        """ Iterate over page events. """
+        """ Iterate over page events.
+
+            :param str time_filter: Optional time filter
+        """
         return self.service.iter_events(self['id'], time_filter)
 
 
@@ -123,7 +165,10 @@ class FacebookEvent(bases.BaseObject):
     LOCATION_KEYS = ('name', 'street', 'city', 'state', 'country', 'zip')
 
     def location_string(self, *keys):
-        """ Get location info as a string. """
+        """ Get location info as a string.
+
+            :param tuple(str) keys: Optional keys to use in building string
+        """
         keys = keys or self.LOCATION_KEYS
         place = self.get('place', {}).copy()
         try:
@@ -148,7 +193,10 @@ class FacebookEvent(bases.BaseObject):
         return datetime.strptime(self.get('start_time'), '%Y-%m-%dT%H:%M:%S%z')
 
     def end_time(self, **delta):
-        """ Helper to get end_time datetime object. """
+        """ Helper to get end_time datetime object.
+
+            :param dict delta: Optional timedelta if end_time not given
+        """
         try:
             return datetime.strptime(self.get('end_time'),
                                      '%Y-%m-%dT%H:%M:%S%z')
