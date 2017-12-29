@@ -1,6 +1,7 @@
 """
 Facebook Graph API tools.
 """
+import logging
 import os
 from datetime import datetime
 from datetime import timedelta
@@ -38,6 +39,8 @@ class GraphAPI(facebook.GraphAPI):
     def __init__(self, app_id=None, app_secret=None, **kwargs):
         self.app_id = app_id or FACEBOOK_APP_ID
         self.app_secret = app_secret or FACEBOOK_APP_SECRET
+        self.logger = logging.getLogger(
+            '{}.{}'.format(__name__, type(self).__name__))
         super(GraphAPI, self).__init__(**kwargs)
 
     def authenticate(self):
@@ -55,6 +58,11 @@ class GraphAPI(facebook.GraphAPI):
     def get_events(self, page_id, time_filter=None):
         """ Get list of page events. """
         return list(self.iter_events(page_id, time_filter))
+
+    def get_object(self, facebook_id, **args):
+        """ Get facebook object. """
+        self.logger.info('GET /%s %r', facebook_id, args)
+        return super(GraphAPI, self).get_object(facebook_id, **args)
 
     @authenticated
     def iter_events(self, page_id, time_filter=None):
