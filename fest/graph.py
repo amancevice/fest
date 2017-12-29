@@ -172,8 +172,8 @@ class FacebookEvent(bases.BaseObject):
         keys = keys or self.LOCATION_KEYS
         place = self.get('place', {}).copy()
         try:
-            loc = place.pop('location')
-            loc.update(place)
+            loc = place['location'].copy()
+            loc.update(name=place['name'])
         except KeyError:
             loc = place
         values = [str(loc[x]) for x in keys if x in loc]
