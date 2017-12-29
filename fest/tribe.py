@@ -197,7 +197,7 @@ class TribeAPI(bases.BaseAPI):
             # Patch event if digests differ (otherwise no op)
             if facebook_event['id'] in postmap:
                 post = postmap[facebook_event['id']]
-                if post.facebook_digest == facebook_event.digest():
+                if post.facebook_digest != facebook_event.digest():
                     if dryrun is False:
                         self.patch_event(post, facebook_event)
                     else:
