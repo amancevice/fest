@@ -62,7 +62,7 @@ class TribeAPI(bases.BaseAPI):
         self.logger.info('POST %s', tribe_endpoint)
         return requests.post(tribe_endpoint,
                              headers=self.basic_auth(),
-                             json=tribe_event.struct)
+                             json=tribe_event)
 
     def basic_auth(self):
         """ Helper to get basic auth header. """
@@ -125,7 +125,7 @@ class TribeAPI(bases.BaseAPI):
             request = wp.methods.posts.GetPosts(kwargs)
             self.logger.info('GET %s', kwargs)
             posts = self.service.call(request)
-            if any(posts):
+            if not any(posts):
                 break  # no more posts returned
             for post in posts:
                 body = {k: v for k, v in post.struct.items() if v is not None}
@@ -142,16 +142,17 @@ class TribeAPI(bases.BaseAPI):
         for field in post.custom_fields:
             if field['key'] == 'facebook_digest':
                 field['value'] = facebook_event.digest()
-        request = wp.methods.posts.EditPost(post)
+        request = wp.methods.posts.EditPost(post.id, post)
         self.logger.info('EDIT %s :: %s', post.id, facebook_event['id'])
         if self.service.call(request):
-            patch = facebook_event.to_tribe()
+            event = facebook_event.to_tribe()
+            tribe_event = event['tribe_event']
             tribe_endpoint = "{}/events/{}".format(self.service.tribe_endpoint,
                                                    post.id)
             self.logger.info('POST %s', tribe_endpoint)
             return requests.post(tribe_endpoint,
                                  headers=self.basic_auth(),
-                                 json=patch.struct)
+                                 json=tribe_event)
         self.logger.error('ERROR %s :: %s', post.id, facebook_event['id'])
         return None
 
@@ -196,12 +197,18 @@ class TribeAPI(bases.BaseAPI):
             # Patch event if digests differ (otherwise no op)
             if facebook_event['id'] in postmap:
                 post = postmap[facebook_event['id']]
-                if dryrun is False:
-                    self.patch_event(post, facebook_event)
+                if post.facebook_digest == facebook_event.digest():
+                    if dryrun is False:
+                        self.patch_event(post, facebook_event)
+                    else:
+                        self.logger.debug('DRYRUN PATCH %s :: %s',
+                                          post.id,
+                                          facebook_event['id'])
                 else:
-                    self.logger.debug('DRYRUN PATCH %s :: %s',
+                    self.logger.debug('NO-OP %s :: %s',
                                       post.id,
                                       facebook_event['id'])
+
             # Insert new event
             else:
                 if dryrun is False:
