@@ -19,7 +19,7 @@ GOOGLE_PRIVATE_KEY_ID = os.getenv('GOOGLE_PRIVATE_KEY_ID')
 GOOGLE_SCOPE = os.getenv('GOOGLE_SCOPE')
 
 
-class CalendarAPI(object):
+class CalendarAPI(bases.BaseAPI):
     """ Google Cloud Service.
 
         :param object service: Google Cloud service resource
@@ -59,15 +59,10 @@ class CalendarAPI(object):
                                   cache_discovery=False)
         return cls(service)
 
-    def __init__(self, service):
-        self.service = service
-        self.logger = logging.getLogger(
-            '{}.{}'.format(__name__, type(self).__name__))
-
     def add_event(self, calendar_id, facebook_event):
         """ Add facebook event.
 
-            :param str calendar_id: Google calendar ID
+            :param str calendar_id: Google Calendar ID
             :param object facebook_event: FacebookEvent instance
         """
         insert_event = facebook_event.to_google()
@@ -80,7 +75,7 @@ class CalendarAPI(object):
     def add_owner(self, calendar_id, email):
         """ Give ownership to user by email.
 
-            :param str calendar_id: Google calendar ID
+            :param str calendar_id: Google Calendar ID
             :param str email: Owner email address
         """
         acl = {'scope': {'type': 'user', 'value': email},
@@ -94,7 +89,7 @@ class CalendarAPI(object):
     def clear_events(self, calendar_id):
         """ Clears the calendar of ALL events.
 
-            :param str calendar_id: Google calendar ID
+            :param str calendar_id: Google Calendar ID
         """
         batch = self.service.new_batch_http_request()
         service = self.service.events()
@@ -120,7 +115,7 @@ class CalendarAPI(object):
     def delete_calendar(self, calendar_id):
         """ Create calendar from FacebookPage object.
 
-            :param str calendar_id: Google calendar ID
+            :param str calendar_id: Google Calendar ID
         """
         # pylint: disable=invalid-name,no-member
         service = self.service.calendars()
@@ -135,7 +130,7 @@ class CalendarAPI(object):
     def get_calendar(self, calendar_id):
         """ Get calendar.
 
-            :param str calendar_id: Google calendar ID
+            :param str calendar_id: Google Calendar ID
         """
         service = self.service.calendars()  # pylint: disable=no-member
         request = service.get(calendarId=calendar_id)
@@ -145,8 +140,8 @@ class CalendarAPI(object):
     def get_event(self, calendar_id, event_id):
         """ Get event by Google ID.
 
-            :param str calendar_id: Google calendar ID
-            :param str event_id: Google event ID
+            :param str calendar_id: Google Calendar ID
+            :param str event_id: Google Event ID
             :returns object: GoogleEvent instance
         """
         service = self.service.events()
@@ -232,6 +227,87 @@ class CalendarAPI(object):
             except KeyError:
                 break
 
+    def patch_event(self, calendar_id, event_id, facebook_event):
+        """ Patch facebook event.
+
+            :param str calendar_id: Google Calendar ID
+            :param str event_id: Google Event ID
+            :param object facebook_event: FacebookEvent instance
+        """
+        patch_event = facebook_event.to_google()
+        service = self.service.events()
+        request = service.patch(calendarId=self['id'],
+                                eventId=google_event['id'],
+                                body=patch_event.struct)
+        self.logger.info('PATCH %s/%s[%s]',
+                         calendar_id,
+                         event_id,
+                         facebook_event['id'])
+        return request.execute()
+
+    def sync_event(self, calendar_id, facebook_event):
+        """ Synchronize facebook event with calendar.
+
+            :param str calendar_id: Google Calendar ID
+            :param object facebook_event: Facebook event instance
+        """
+        # Attempt to patch existing event
+        for google_event in self.iter_events():
+            if google_event.facebook_id == facebook_event['id']:
+                # Apply patch
+                if google_event.facebook_digest != facebook_event.digest():
+                    return self.patch_event(calendar_id,
+                                            google_event['id'],
+                                            facebook_event)
+                # No op
+                return None
+        # Add event if no events can be patched
+        return self.add_event(calendar_id, facebook_event)
+
+    def sync_events(self, calendar_id, facebook_events, dryrun=False):
+        """ Synchronize facebook events with calendar.
+
+            :param str calendar_id: Google Calendar ID
+            :param list[object] facebook_events: FacebookEvent instances
+            :param bool dryrun: Toggle execute batch request
+        """
+        eventmap = {x.facebook_id: x for x in self.iter_events(calendar_id)}
+        batch = self.service.new_batch_http_request()
+        service = self.service.events()
+
+        # Add or patch facebook events
+        for facebook_event in facebook_events:
+            # Patch event if digests differ (otherwise no op)
+            if facebook_event['id'] in eventmap:
+                google_event = eventmap[facebook_event['id']]
+                if google_event.facebook_digest != facebook_event.digest():
+                    patch_event = facebook_event.to_google()
+                    request = service.patch(calendarId=calendar_id,
+                                            eventId=google_event['id'],
+                                            body=patch_event.struct)
+                    batch.add(request)
+                    self.logger.info('PATCH %s/%s[%s]',
+                                     calendar_id,
+                                     google_event['id'],
+                                     facebook_event['id'])
+            # Insert new event
+            elif facebook_event['id'] not in eventmap:
+                insert_event = facebook_event.to_google()
+                request = service.insert(calendarId=calendar_id,
+                                         body=insert_event.struct)
+                batch.add(request)
+                self.logger.info('CREATE %s/%s[%s]',
+                                 calendar_id,
+                                 google_event['id'],
+                                 facebook_event['id'])
+
+        # Execute batch request
+        if dryrun is False:
+            self.logger.info('EXECUTE')
+            return batch.execute()
+        else:
+            self.logger.debug('DRYRUN')
+
 
 class GoogleCalendar(bases.BaseObject):
     """ Google Calendar Object.
@@ -285,73 +361,28 @@ class GoogleCalendar(bases.BaseObject):
         """ Iterate over all Google Calendar events. """
         return self.service.iter_events(self['id'])
 
-    # TODO
-    def patch_event(self, facebook_event, google_event):
+    def patch_event(self, event_id, facebook_event):
         """ Patch facebook event.
 
+            :param object event_id: Google Event ID
             :param object facebook_event: FacebookEvent instance
-            :param object google_event: GoogleEvent instance
         """
-        patch_event = facebook_event.to_google()
-        service = self.service.events()
-        request = service.patch(calendarId=self['id'],
-                                eventId=google_event['id'],
-                                body=patch_event.struct)
-        return request.execute()
+        return self.service.patch_event(self['id'], event_id, facebook_event)
 
-    # TODO
     def sync_event(self, facebook_event):
         """ Synchronize facebook event with calendar.
 
             :param object facebook_event: Facebook event instance
         """
-        # Attempt to patch existing event
-        for google_event in self.iter_events():
-            if google_event.facebook_id == facebook_event['id']:
-                # Apply patch
-                if google_event.facebook_digest != facebook_event.digest():
-                    return self.patch_event(facebook_event, google_event)
-                # No op
-                return None
-        # Add event if no events can be patched
-        return self.add_event(facebook_event)
+        return self.service.sync_event(self['id'], facebook_event)
 
-    # TODO
-    def sync_events(self, *facebook_events):
+    def sync_events(self, facebook_events, dryrun=False):
         """ Synchronize facebook events with calendar.
 
-            :param tuple facebook_events: Facebook event instances
+            :param list[object] facebook_events: Facebook event instances
+            :param bool dryrun: Toggle execute batch request
         """
-        eventmap = {x.facebook_id: x for x in self.iter_events()}
-        batch = self.service.new_batch_http_request()
-        service = self.service.events()
-
-        # Add or patch facebook events
-        for facebook_event in facebook_events:
-            # Patch event if digests differ (otherwise no op)
-            if facebook_event['id'] in eventmap:
-                google_event = eventmap[facebook_event['id']]
-                if google_event.facebook_digest != facebook_event.digest():
-                    patch_event = facebook_event.to_google()
-                    request = service.patch(calendarId=self['id'],
-                                            eventId=google_event['id'],
-                                            body=patch_event.struct)
-                    batch.add(request)
-                    self.service.logger.info(
-                        'PATCH %s %s'.format(facebook_event['id'],
-                                             google_event['id']))
-            # Insert new event
-            elif facebook_event['id'] not in eventmap:
-                insert_event = facebook_event.to_google()
-                request = service.insert(calendarId=self['id'],
-                                         body=insert_event.struct)
-                batch.add(request)
-                self.service.logger.info(
-                    'CREATE %s %s'.format(facebook_event['id'],
-                                          google_event['id']))
-
-        # Execute batch request
-        # batch.execute()
+        return self.service.sync_events(self['id'], facebook_events, dryrun)
 
 
 class GoogleEvent(bases.BaseObject):
