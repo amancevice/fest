@@ -238,7 +238,7 @@ class CalendarAPI(bases.BaseAPI):
         request = service.patch(calendarId=calendar_id,
                                 eventId=event_id,
                                 body=patch.struct)
-        self.logger.info('PATCH %s/%s[%s]',
+        self.logger.info('PATCH %s/%s :: %s',
                          calendar_id,
                          event_id,
                          facebook_event['id'])
@@ -285,12 +285,12 @@ class CalendarAPI(bases.BaseAPI):
                                             eventId=google_event['id'],
                                             body=patch.struct)
                     batch.add(request)
-                    self.logger.info('PATCH %s/%s[%s]',
+                    self.logger.info('PATCH %s/%s :: %s',
                                      calendar_id,
                                      google_event['id'],
                                      facebook_event['id'])
                 else:
-                    self.logger.debug('NO-OP %s/%s[%s]',
+                    self.logger.debug('NO-OP %s/%s :: %s',
                                       calendar_id,
                                       google_event['id'],
                                       facebook_event['id'])
@@ -300,7 +300,7 @@ class CalendarAPI(bases.BaseAPI):
                 request = service.insert(calendarId=calendar_id,
                                          body=insert.struct)
                 batch.add(request)
-                self.logger.info('CREATE %s/%s[%s]',
+                self.logger.info('CREATE %s/%s :: %s',
                                  calendar_id,
                                  google_event['id'],
                                  facebook_event['id'])
