@@ -50,8 +50,8 @@ def fest_google(ctx, google_account_type, google_client_email,
                 google_scope):
     """ Connect to Google Cloud. """
     # pylint: disable=too-many-arguments
-    from fest import google
-    ctx.obj['cloud'] = google.GoogleCloud.from_credentials(
+    from fest import cloud
+    ctx.obj['cloud'] = cloud.CalendarAPI.from_credentials(
         scopes=[google_scope],
         service_type=google_account_type,
         private_key_id=google_private_key_id,
