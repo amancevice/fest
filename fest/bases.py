@@ -4,6 +4,20 @@ Base objects
 import collections
 import hashlib
 import json
+import logging
+
+
+class BaseAPI(object):
+    """ Base API. """
+    def __init__(self, service):
+        self.service = service
+        self.logger = logging.getLogger(self.__log__)
+
+    @property
+    def __log__(self):
+        """ Logger name. """
+        cls = type(self)
+        return '{mod}.{cls}'.format(mod=cls.__module__, cls=cls.__name__)
 
 
 class BaseObject(collections.Mapping):

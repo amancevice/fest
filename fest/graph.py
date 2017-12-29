@@ -18,7 +18,7 @@ def authenticated(func):
     """ Authentication decorator. """
     def wrapper(graph, *args, **kwargs):
         """ Authentication wrapper. """
-        if graph.access_token is None:
+        if graph.service.access_token is None:
             graph.authenticate()
         try:
             return func(graph, *args, **kwargs)
@@ -28,27 +28,34 @@ def authenticated(func):
     return wrapper
 
 
-class GraphAPI(facebook.GraphAPI):
+class GraphAPI(bases.BaseAPI):
     """ Facebook GraphAPI Object.
 
-        :param app_id: Facebook app ID
-        :param app_secret: Facebook app secret ID
-        :type app_id: str
-        :type app_secret: str
+        :param object service: GraphAPI service instance
     """
-    def __init__(self, app_id=None, app_secret=None, **kwargs):
-        self.app_id = app_id or FACEBOOK_APP_ID
-        self.app_secret = app_secret or FACEBOOK_APP_SECRET
-        self.logger = logging.getLogger(
-            '{}.{}'.format(__name__, type(self).__name__))
-        super(GraphAPI, self).__init__(**kwargs)
+    @classmethod
+    def from_env(cls):
+        """ Create CalendarAPI object from ENV variables. """
+        return cls.from_credentials()
+
+    @classmethod
+    def from_credentials(cls, app_id=None, app_secret=None):
+        """ Create CalendarAPI object from credentials
+
+            :param str app_id: Facebook app ID
+            :param str app_secret: Facebook app secret ID
+        """
+        service = facebook.GraphAPI()
+        service.app_id = app_id or FACEBOOK_APP_ID
+        service.app_secret = app_secret or FACEBOOK_APP_SECRET
+        return cls(service)
 
     def authenticate(self):
         """ Get access token. """
-        self.access_token = self.get_app_access_token(self.app_id,
-                                                      self.app_secret)
+        self.service.access_token = \
+            self.service.get_app_access_token(
+                self.service.app_id, self.service.app_secret)
 
-    @authenticated
     def get_page(self, page_id, *fields):
         """ Get facebook page. """
         fields = {'about', 'location', 'mission', 'name'} | set(fields)
@@ -59,12 +66,12 @@ class GraphAPI(facebook.GraphAPI):
         """ Get list of page events. """
         return list(self.iter_events(page_id, time_filter))
 
+    @authenticated
     def get_object(self, facebook_id, **args):
         """ Get facebook object. """
         self.logger.info('GET /%s %r', facebook_id, args)
-        return super(GraphAPI, self).get_object(facebook_id, **args)
+        return self.service.get_object(facebook_id, **args)
 
-    @authenticated
     def iter_events(self, page_id, time_filter=None):
         """ Iterate over page events. """
         path = '{}/events'.format(page_id)
