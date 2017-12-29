@@ -8,8 +8,7 @@ from fest import __version__
 from fest import graph as facebook
 
 # Configure Logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(format='%(name)s - %(levelname)s - %(message)s')
 logging.getLogger('fest.graph.GraphAPI').setLevel('DEBUG')
 logging.getLogger('fest.cloud.CalendarAPI').setLevel('DEBUG')
 logging.getLogger('fest.tribe.TribeAPI').setLevel('DEBUG')
