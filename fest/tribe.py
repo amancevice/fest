@@ -219,6 +219,14 @@ class TribeAPI(bases.BaseAPI):
 
 class WordPressPost(wp.WordPressPost):
     """ WordPressPost object. """
+    def __init__(self, xmlprc=None):
+        super(WordPressPost, self).__init__(xmlprc)
+        for env in os.environ:
+            if env.startswith('WP_CUSTOM_FIELD_'):
+                key = env.replace('WP_CUSTOM_FIELD_', '').lower()
+                value = os.getenv(env)
+                self.set_custom_field(key, value)
+
     @property
     def facebook_fields(self):
         """ Get custom facebook fields.
@@ -243,6 +251,15 @@ class WordPressPost(wp.WordPressPost):
             :returns str: FacebookEvent ID
         """
         return self.facebook_fields.get('facebook_digest')
+
+    def set_custom_field(self, key, value):
+        """ Helper to set/update custom field. """
+        # pylint: disable=no-member
+        keys = {x['key']: i for i, x in enumerate(self.custom_fields)}
+        if key in keys:
+            self.custom_fields[keys[key]]['value'] = value
+        else:
+            self.custom_fields.append({'key': key, 'value': value})
 
 
 class TribeEvent(bases.BaseObject):

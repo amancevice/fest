@@ -47,8 +47,7 @@ class CalendarAPI(bases.BaseAPI):
             'private_key_id': private_key_id or GOOGLE_PRIVATE_KEY_ID,
             'private_key': private_key or GOOGLE_PRIVATE_KEY,
             'client_email': client_email or GOOGLE_CLIENT_EMAIL,
-            'client_id': client_id or GOOGLE_CLIENT_ID
-        }
+            'client_id': client_id or GOOGLE_CLIENT_ID}
         credentials = \
             service_account.ServiceAccountCredentials.from_json_keyfile_dict(
                 keyfile_dict, scopes=scopes or [GOOGLE_SCOPE])
