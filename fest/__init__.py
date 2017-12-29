@@ -2,7 +2,6 @@
 Facebook Events Sync
 """
 import pkg_resources
-from fest.graph import GraphAPI
 
 try:
     __version__ = pkg_resources.get_distribution(__package__).version

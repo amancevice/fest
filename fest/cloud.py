@@ -1,7 +1,6 @@
 """
 Google Cloud tools.
 """
-import logging
 import os
 
 import httplib2
@@ -93,10 +92,10 @@ class CalendarAPI(bases.BaseAPI):
         """
         batch = self.service.new_batch_http_request()
         service = self.service.events()
-        for event in self.iter_events():
+        for event in self.iter_events(calendar_id):
             request = service.delete(calendarId=calendar_id,
                                      eventId=event['id'])
-            self.logger.warn('DELETE %s/%s', calendar_id, event['id'])
+            self.logger.warning('DELETE %s/%s', calendar_id, event['id'])
             batch.add(request)
         return batch.execute()
 
@@ -120,7 +119,7 @@ class CalendarAPI(bases.BaseAPI):
         # pylint: disable=invalid-name,no-member
         service = self.service.calendars()
         request = service.delete(calendarId=calendar_id)
-        self.logger.warn('DELETE %s', calendar_id)
+        self.logger.warning('DELETE %s', calendar_id)
         return request.execute()
 
     def get_calendars(self):
@@ -234,11 +233,11 @@ class CalendarAPI(bases.BaseAPI):
             :param str event_id: Google Event ID
             :param object facebook_event: FacebookEvent instance
         """
-        patch_event = facebook_event.to_google()
+        patch = facebook_event.to_google()
         service = self.service.events()
-        request = service.patch(calendarId=self['id'],
-                                eventId=google_event['id'],
-                                body=patch_event.struct)
+        request = service.patch(calendarId=calendar_id,
+                                eventId=event_id,
+                                body=patch.struct)
         self.logger.info('PATCH %s/%s[%s]',
                          calendar_id,
                          event_id,
@@ -252,7 +251,7 @@ class CalendarAPI(bases.BaseAPI):
             :param object facebook_event: Facebook event instance
         """
         # Attempt to patch existing event
-        for google_event in self.iter_events():
+        for google_event in self.iter_events(calendar_id):
             if google_event.facebook_id == facebook_event['id']:
                 # Apply patch
                 if google_event.facebook_digest != facebook_event.digest():
@@ -281,10 +280,10 @@ class CalendarAPI(bases.BaseAPI):
             if facebook_event['id'] in eventmap:
                 google_event = eventmap[facebook_event['id']]
                 if google_event.facebook_digest != facebook_event.digest():
-                    patch_event = facebook_event.to_google()
+                    patch = facebook_event.to_google()
                     request = service.patch(calendarId=calendar_id,
                                             eventId=google_event['id'],
-                                            body=patch_event.struct)
+                                            body=patch.struct)
                     batch.add(request)
                     self.logger.info('PATCH %s/%s[%s]',
                                      calendar_id,
@@ -297,9 +296,9 @@ class CalendarAPI(bases.BaseAPI):
                                       facebook_event['id'])
             # Insert new event
             else:
-                insert_event = facebook_event.to_google()
+                insert = facebook_event.to_google()
                 request = service.insert(calendarId=calendar_id,
-                                         body=insert_event.struct)
+                                         body=insert.struct)
                 batch.add(request)
                 self.logger.info('CREATE %s/%s[%s]',
                                  calendar_id,
@@ -310,8 +309,8 @@ class CalendarAPI(bases.BaseAPI):
         if dryrun is False:
             self.logger.info('EXECUTE')
             return batch.execute()
-        else:
-            self.logger.debug('DRYRUN')
+        self.logger.debug('DRYRUN')
+        return None
 
 
 class GoogleCalendar(bases.BaseObject):

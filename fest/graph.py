@@ -1,7 +1,6 @@
 """
 Facebook Graph API tools.
 """
-import logging
 import os
 from datetime import datetime
 from datetime import timedelta
@@ -35,12 +34,12 @@ class GraphAPI(bases.BaseAPI):
     """
     @classmethod
     def from_env(cls):
-        """ Create CalendarAPI object from ENV variables. """
+        """ Create GraphAPI object from ENV variables. """
         return cls.from_credentials()
 
     @classmethod
     def from_credentials(cls, app_id=None, app_secret=None):
-        """ Create CalendarAPI object from credentials
+        """ Create GraphAPI object from credentials
 
             :param str app_id: Facebook app ID
             :param str app_secret: Facebook app secret ID

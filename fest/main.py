@@ -21,8 +21,9 @@ def fest(ctx, facebook_app_id, facebook_app_secret):
         See https://github.com/amancevice/fest for details & instructions.
     """
     ctx.obj = {}
-    ctx.obj['graph'] = facebook.GraphAPI(app_id=facebook_app_id,
-                                         app_secret=facebook_app_secret)
+    ctx.obj['graph'] = facebook.GraphAPI.from_credentials(
+        app_id=facebook_app_id,
+        app_secret=facebook_app_secret)
 
 
 @fest.group('google')
@@ -61,27 +62,28 @@ def fest_google(ctx, google_account_type, google_client_email,
 
 
 @fest.group('tribe')
-@click.option('--tribe-endpoint',
-              envvar='TRIBE_ENDPOINT',
-              help='Optional tribe REST API endpoint')
+@click.option('--wordpress-app-password',
+              envvar='WORDPRESS_APP_PASSWORD',
+              help='Optional WordPress app password')
 @click.option('--wordpress-endpoint',
               envvar='WORDPRESS_ENDPOINT',
               help='Optional wordpress endpoint')
 @click.option('--wordpress-username',
               envvar='WORDPRESS_USERNAME',
               help='Optional wordpress username')
-@click.option('--wordpress-app-password',
-              envvar='WORDPRESS_APP_PASSWORD',
-              help='Optional WordPress app password')
+@click.option('--tribe-endpoint',
+              envvar='TRIBE_ENDPOINT',
+              help='Optional tribe REST API endpoint')
 @click.pass_context
-def fest_tribe(ctx, tribe_endpoint, wordpress_endpoint, wordpress_username,
-               wordpress_app_password):
+def fest_tribe(ctx, wordpress_app_password, wordpress_endpoint,
+               wordpress_username, tribe_endpoint):
     """ Connect to Tribe. """
     from fest import tribe
-    wordpress = tribe.WordPress(url=wordpress_endpoint,
-                                username=wordpress_username,
-                                password=wordpress_app_password)
-    ctx.obj['tribe'] = tribe.TribeCalendar(wordpress, tribe_endpoint)
+    ctx.obj['tribe'] = tribe.TribeAPI.from_credentials(
+        wordpress_endpoint=wordpress_endpoint,
+        wordpress_username=wordpress_username,
+        wordpress_app_password=wordpress_app_password,
+        tribe_endpoint=tribe_endpoint)
 
 
 @fest_google.command('clear')
