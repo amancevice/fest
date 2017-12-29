@@ -52,7 +52,7 @@ class WordPress(wp.Client):
             yield post
 
 
-class TribeCalendar(object):
+class TribeAPI(object):
     """ The Events Calendar client
 
         :param object wordpress: WordPress XML RPC client instance
