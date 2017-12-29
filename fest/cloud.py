@@ -1,6 +1,7 @@
 """
 Google Cloud tools.
 """
+import logging
 import os
 
 import httplib2
@@ -18,7 +19,7 @@ GOOGLE_PRIVATE_KEY_ID = os.getenv('GOOGLE_PRIVATE_KEY_ID')
 GOOGLE_SCOPE = os.getenv('GOOGLE_SCOPE')
 
 
-class GoogleCloud(object):
+class CalendarAPI(object):
     """ Google Cloud Service.
 
         :param object service: Google Cloud service resource
@@ -60,6 +61,49 @@ class GoogleCloud(object):
 
     def __init__(self, service):
         self.service = service
+        self.logger = logging.getLogger(
+            '{}.{}'.format(__name__, type(self).__name__))
+
+    def add_event(self, calendar_id, facebook_event):
+        """ Add facebook event.
+
+            :param str calendar_id: Google calendar ID
+            :param object facebook_event: FacebookEvent instance
+        """
+        insert_event = facebook_event.to_google()
+        service = self.service.events()
+        request = service.insert(calendarId=calendar_id,
+                                 body=insert_event.struct)
+        self.logger.info('CREATE %s/%s', calendar_id, facebook_event['id'])
+        return request.execute()
+
+    def add_owner(self, calendar_id, email):
+        """ Give ownership to user by email.
+
+            :param str calendar_id: Google calendar ID
+            :param str email: Owner email address
+        """
+        acl = {'scope': {'type': 'user', 'value': email},
+               'kind': 'calendar#aclRule',
+               'role': 'owner'}
+        service = self.service.acl()
+        request = service.insert(calendarId=calendar_id, body=acl)
+        self.logger.info('ADD OWNER %s/%s', calendar_id, email)
+        return request.execute()
+
+    def clear_events(self, calendar_id):
+        """ Clears the calendar of ALL events.
+
+            :param str calendar_id: Google calendar ID
+        """
+        batch = self.service.new_batch_http_request()
+        service = self.service.events()
+        for event in self.iter_events():
+            request = service.delete(calendarId=calendar_id,
+                                     eventId=event['id'])
+            self.logger.warn('DELETE %s/%s', calendar_id, event['id'])
+            batch.add(request)
+        return batch.execute()
 
     def create_calendar(self, facebook_page, tz):
         """ Create calendar from FacebookPage object.
@@ -70,27 +114,53 @@ class GoogleCloud(object):
         # pylint: disable=invalid-name,no-member
         service = self.service.calendars()
         request = service.insert(body=facebook_page.to_google(tz))
+        self.logger.info('CREATE %s %s', facebook_page['id'], tz)
         return GoogleCalendar(self.service, **request.execute())
 
-    def delete_calendar(self, google_id):
+    def delete_calendar(self, calendar_id):
         """ Create calendar from FacebookPage object.
 
-            :param str google_id: Google calendar ID
+            :param str calendar_id: Google calendar ID
         """
         # pylint: disable=invalid-name,no-member
         service = self.service.calendars()
-        request = service.delete(calendarId=google_id)
+        request = service.delete(calendarId=calendar_id)
+        self.logger.warn('DELETE %s', calendar_id)
         return request.execute()
 
     def get_calendars(self):
         """ Get list of Google Calendars. """
         return list(self.iter_calendars())
 
-    def get_calendar(self, google_id):
-        """ Get calendar. """
+    def get_calendar(self, calendar_id):
+        """ Get calendar.
+
+            :param str calendar_id: Google calendar ID
+        """
         service = self.service.calendars()  # pylint: disable=no-member
-        request = service.get(calendarId=google_id)
-        return GoogleCalendar(self.service, **request.execute())
+        request = service.get(calendarId=calendar_id)
+        self.logger.info('GET %s', calendar_id)
+        return GoogleCalendar(self, **request.execute())
+
+    def get_event(self, calendar_id, event_id):
+        """ Get event by Google ID.
+
+            :param str calendar_id: Google calendar ID
+            :param str event_id: Google event ID
+            :returns object: GoogleEvent instance
+        """
+        service = self.service.events()
+        request = service.get(calendarId=calendar_id, eventId=event_id)
+        self.logger.info('GET %s/%s', calendar_id, event_id)
+        return GoogleEvent(self, **request.execute())
+
+    def get_events(self, calendar_id):
+        """ Get events in calendar.
+
+            :param str calendar_id: Google Calendar ID
+            :returns list[object]: List of GoogleEvent
+        """
+        return list(self.iter_events(calendar_id))
 
     def get_facebook_calendar(self, facebook_id):
         """ Get Google Calendar by facebook page ID.
@@ -105,20 +175,62 @@ class GoogleCloud(object):
                 return cal
         return None
 
+    def get_facebook_event(self, calendar_id, facebook_id):
+        """ Get event by facebook ID.
+
+            Searches 'extendedProperties :: private :: facebookId'
+
+            :param str calendar_id: Google calendar ID
+            :param str facebook_id: facebook page ID
+            :returns object: GoogleEvent instance
+        """
+        for google_event in self.iter_events(calendar_id):
+            if facebook_id == google_event.facebook_id:
+                return google_event
+        return None
+
     def iter_calendars(self):
         """ Iterate over Google Calendars. """
         service = self.service.calendarList()  # pylint: disable=no-member
         request = service.list()
         result = request.execute()
         for item in result.get('items', []):
-            yield GoogleCalendar(self.service, **item)
+            self.logger.info('GET %s', item['id'])
+            yield GoogleCalendar(self, **item)
         try:
-            request = service.list(syncToken=result['nextSyncToken'])
+            request = service.list(pageToken=result['nextPageToken'])
             result = request.execute()
             for item in result.get('items', []):
-                yield GoogleCalendar(self.service, **item)
+                self.logger.info('GET %s', item['id'])
+                yield GoogleCalendar(self, **item)
         except KeyError:
             pass
+
+    def iter_events(self, calendar_id):
+        """ Iterate over all Google Calendar events.
+
+            :param str calendar_id: Google Calendar ID
+        """
+        service = self.service.events()
+        request = service.list(calendarId=calendar_id)
+        self.logger.info('GET %s/events', calendar_id)
+        result = request.execute()
+        for item in result.get('items', []):
+            yield GoogleEvent(self, **item)
+        while True:
+            try:
+                request = service.list(calendarId=calendar_id,
+                                       pageToken=result['nextPageToken'])
+                self.logger.info('GET %s/events %s',
+                                 calendar_id,
+                                 result['nextPageToken'])
+                result = request.execute()
+                for item in result.get('items', []):
+                    yield GoogleEvent(self, **item)
+                if not any(result.get('items', [])):
+                    break
+            except KeyError:
+                break
 
 
 class GoogleCalendar(bases.BaseObject):
@@ -131,33 +243,18 @@ class GoogleCalendar(bases.BaseObject):
 
             :param object facebook_event: FacebookEvent instance
         """
-        insert_event = facebook_event.to_google()
-        service = self.service.events()
-        request = service.insert(calendarId=self['id'],
-                                 body=insert_event.struct)
-        return request.execute()
+        return self.service.add_event(self['id'], facebook_event)
 
     def add_owner(self, email):
         """ Give ownership to user by email.
 
             :param str email: Owner email address
         """
-        acl = {'scope': {'type': 'user', 'value': email},
-               'kind': 'calendar#aclRule',
-               'role': 'owner'}
-        service = self.service.acl()
-        request = service.insert(calendarId=self['id'], body=acl)
-        return request.execute()
+        return self.service.add_owner(self['id'], email)
 
     def clear_events(self):
         """ Clears the calendar of ALL events. """
-        batch = self.service.new_batch_http_request()
-        service = self.service.events()
-        for event in self.iter_events():
-            request = service.delete(calendarId=self['id'],
-                                     eventId=event['id'])
-            batch.add(request)
-        return batch.execute()
+        return self.service.clear_events(self['id'])
 
     def get_events(self):
         """ Get events in calendar.
@@ -166,15 +263,13 @@ class GoogleCalendar(bases.BaseObject):
         """
         return list(self.iter_events())
 
-    def get_event(self, google_id):
+    def get_event(self, event_id):
         """ Get event by Google ID.
 
-            :param str google_id: ID of facebook page
+            :param str event_id: ID of facebook page
             :returns object: GoogleEvent instance
         """
-        service = self.service.events()
-        request = service.get(calendarId=self['id'], eventId=google_id)
-        return GoogleEvent(self.service, **request.execute())
+        return self.service.get_event(self['id'], event_id)
 
     def get_facebook_event(self, facebook_id):
         """ Get event by facebook ID.
@@ -184,30 +279,13 @@ class GoogleCalendar(bases.BaseObject):
             :param str facebook_id: ID of facebook page
             :returns object: GoogleEvent instance
         """
-        for google_event in self.iter_events():
-            if facebook_id == google_event.facebook_id:
-                return google_event
-        return None
+        return self.service.get_facebook_event(self['id'], facebook_id)
 
     def iter_events(self):
         """ Iterate over all Google Calendar events. """
-        service = self.service.events()
-        request = service.list(calendarId=self['id'])
-        result = request.execute()
-        for item in result.get('items', []):
-            yield GoogleEvent(self.service, **item)
-        while True:
-            try:
-                request = service.list(calendarId=self['id'],
-                                       pageToken=result['nextPageToken'])
-                result = request.execute()
-                for item in result.get('items', []):
-                    yield GoogleEvent(self.service, **item)
-                if not any(result.get('items', [])):
-                    break
-            except KeyError:
-                break
+        return self.service.iter_events(self['id'])
 
+    # TODO
     def patch_event(self, facebook_event, google_event):
         """ Patch facebook event.
 
@@ -221,6 +299,7 @@ class GoogleCalendar(bases.BaseObject):
                                 body=patch_event.struct)
         return request.execute()
 
+    # TODO
     def sync_event(self, facebook_event):
         """ Synchronize facebook event with calendar.
 
@@ -237,6 +316,7 @@ class GoogleCalendar(bases.BaseObject):
         # Add event if no events can be patched
         return self.add_event(facebook_event)
 
+    # TODO
     def sync_events(self, *facebook_events):
         """ Synchronize facebook events with calendar.
 
@@ -257,15 +337,21 @@ class GoogleCalendar(bases.BaseObject):
                                             eventId=google_event['id'],
                                             body=patch_event.struct)
                     batch.add(request)
+                    self.service.logger.info(
+                        'PATCH %s %s'.format(facebook_event['id'],
+                                             google_event['id']))
             # Insert new event
             elif facebook_event['id'] not in eventmap:
                 insert_event = facebook_event.to_google()
                 request = service.insert(calendarId=self['id'],
                                          body=insert_event.struct)
                 batch.add(request)
+                self.service.logger.info(
+                    'CREATE %s %s'.format(facebook_event['id'],
+                                          google_event['id']))
 
         # Execute batch request
-        batch.execute()
+        # batch.execute()
 
 
 class GoogleEvent(bases.BaseObject):
