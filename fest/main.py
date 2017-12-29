@@ -1,9 +1,18 @@
 """
 CLI Entrypoint
 """
+import logging
+
 import click
 from fest import __version__
 from fest import graph as facebook
+
+# Configure Logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.getLogger('fest.graph.GraphAPI').setLevel('DEBUG')
+logging.getLogger('fest.cloud.CalendarAPI').setLevel('DEBUG')
+logging.getLogger('fest.tribe.TribeAPI').setLevel('DEBUG')
 
 
 @click.group(context_settings={'help_option_names': ['-h', '--help']})
@@ -162,6 +171,9 @@ def fest_google_shell(ctx):
 
 
 @fest_google.command('sync')
+@click.option('-d', '--dryrun',
+              help='Do not execute sync',
+              is_flag=True)
 @click.option('-f', '--facebook-id',
               envvar='FACEBOOK_PAGE_ID',
               help='Facebook Page ID')
@@ -172,18 +184,15 @@ def fest_google_shell(ctx):
               help='Sync all events, not just upcoming',
               is_flag=True)
 @click.pass_context
-def fest_google_sync(ctx, facebook_id, google_id, sync_all):
+def fest_google_sync(ctx, dryrun, facebook_id, google_id, sync_all):
     """ Sync a facebook page. """
-    click.echo('Fetching Google Calendar: {}'.format(google_id))
-    gcal = ctx.obj['cloud'].get_calendar(google_id)
-
-    click.echo('Fetching Facebook Events: {}'.format(facebook_id))
+    # Get facebook events
     page = ctx.obj['graph'].get_page(facebook_id)
     time_filter = None if sync_all else 'upcoming'
     events = page.get_events(time_filter=time_filter)
 
-    click.echo('Synchronizing Events')
-    gcal.sync_events(*events)
+    gcal = ctx.obj['cloud'].get_calendar(google_id)
+    gcal.sync_events(events, dryrun)
 
 
 @fest_tribe.command('shell')
@@ -201,6 +210,9 @@ def fest_tribe_shell(ctx):
 
 
 @fest_tribe.command('sync')
+@click.option('-d', '--dryrun',
+              help='Do not execute sync',
+              is_flag=True)
 @click.option('-f', '--facebook-id',
               envvar='FACEBOOK_PAGE_ID',
               help='Facebook Page ID')
@@ -208,18 +220,16 @@ def fest_tribe_shell(ctx):
               help='Sync all events, not just upcoming',
               is_flag=True)
 @click.pass_context
-def fest_tribe_sync(ctx, facebook_id, sync_all):
+def fest_tribe_sync(ctx, dryrun, facebook_id, sync_all):
     """ Sync a facebook page. """
-    click.echo('Fetching Tribe Calendar')
-    tribe = ctx.obj['tribe']
-
-    click.echo('Fetching Facebook Events: {}'.format(facebook_id))
+    # Get facebook events
     page = ctx.obj['graph'].get_page(facebook_id)
     time_filter = None if sync_all else 'upcoming'
     events = page.get_events(time_filter=time_filter)
 
-    click.echo('Synchronizing Events')
-    tribe.sync_events(*events)
+    # Sync to Tribe
+    tribe = ctx.obj['tribe']
+    tribe.sync_events(events, dryrun)
 
 
 if __name__ == '__main__':
