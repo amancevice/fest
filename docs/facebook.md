@@ -26,13 +26,3 @@ The following variables can be exported using values from the dashboard:
 export FACEBOOK_APP_ID='<facebook-app-id>'
 export FACEBOOK_APP_SECRET='<facebook-app-secret>'
 ```
-
-### Additional Settings
-
-You may also wish to export the following variable:
-
-```bash
-export FACEBOOK_PAGE_ID='<facebook-page-id-or-alias>'
-```
-
-This variable will enable your app to bind to a single facebook page.

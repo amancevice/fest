@@ -8,14 +8,18 @@
 
 Sync public facebook events to other services.
 
-*Note, only Google Calendar is supported at the moment*
+**Supported Services**
+
+* Google Calendar
+* The Events Calendar plugin for WordPress
 
 ## Prerequisites
 
-Before beginning, you will need to create and configure facebook and Google Cloud accounts:
+Before beginning, you will need to create and configure a [facebook app](./docs/facebook.md#facebook) to acquire the access keys to use Graph API.
 
-* [Facebook Developer](./docs/facebook.md#facebook)
-* [Google Cloud Service](./docs/google.md#google-cloud)
+For Google, you will need to set up a [Google Cloud Service](./docs/google.md#google-cloud) account.
+
+For WordPress, you will need to install the [Application Passwords](https://wordpress.org/plugins/application-passwords/) and [The Events Calendar](https://wordpress.org/plugins/event-tickets/) plugins. Read the [WordPress](./docs/wordpress.md#wordpress) docs for more information.
 
 ## Installation
 
@@ -25,21 +29,24 @@ Install `fest` using pip:
 pip install fest
 ```
 
-Or, use the provided `docker-compose` configuration to use the [fest CLI](./docs/cli.md#fest-cli) in a Docker container.
+Use extras to install support for supported sync endpoint(s):
 
-## Basic Use
+```bash
+pip install fest[google]     # Installs Google pips
+pip install fest[wordpress]  # Installs WordPress pips
+pip install fest[cli]        # Install `fest` CLI pips
+pip install fest[all]        # Installs all pips
+```
 
-The easiest way to manage access is to store your credentials for facebook/Google projects as environmental variables. See the above instructions on how to configure these variables.
-
-For these examples the credentials will be explicitly passed.
-
-### Getting Facebook Page Events
+### Basic Use
 
 ```python
 import fest
 
 # Connect to Graph API & get page
-graph = fest.GraphAPI('<app_id>', '<app_secret>')
+graph = fest.GraphAPI.from_credentials(
+    app_id='<app_id>',
+    app_secret='<app_secret>')
 page = graph.get_page('<page_id_or_alias>')
 
 # Get ALL events
@@ -47,68 +54,11 @@ events = page.get_events()
 
 # Get UPCOMING events
 upcoming = page.get_events(time_filter='upcoming')
+
+# Iterate over events
+for event in page.iter_events():
+  print(event)
 ```
-
-### Creating Google Calendar from Facebook Page
-
-Using the service account described above, you can create a Google Calender from a facebook page:
-
-```python
-# Connect to Google Cloud
-cloud = fest.CalendarAPI.from_credentials(
-    scopes=['https://www.googleapis.com/auth/calendar'],
-    service_type='service_account',
-    private_key_id='<private_key_id>',
-    private_key='<private_key>',
-    client_email='<client_email>',
-    client_id='<client_id>')
-
-# Get facebook page
-page = graph.get_page('<page_id_or_alias>')
-
-# Create calendar
-gcal = cloud.create_calendar(page, tz='America/New_York')
-```
-
-### Grant Ownership of the new Calendar
-
-Because the service account is not a human, it may help to add a human owner to the calendar to manually manage other components of the calendar:
-
-```python
-gcal.add_owner('owner.email@gmail.com')
-```
-
-### Sync All Facebook Events
-
-With the facebook page and Google Calendar in hand, synching all events is easy:
-
-```python
-gcal.sync_page(page, tz='America/New_York')
-```
-
-This will sync ALL events into the new calendar &mdash; regardless of prior state.
-
-To clear a calendar:
-
-```python
-gcal.clear_events()
-```
-
-### Updates
-
-Events written to the Google Calendar are tagged with their original facebook ID. You can use this value to filter out previously synced events:
-
-```python
-# Get upcoming facebook events
-upcoming = page.get_events(time_filter='upcoming')
-
-# Filter out events that have already been loaded
-events = [x for x in events if gcal.get_facebook_event(x['id']) is None]
-```
-
-### Fest CLI
-
-See [CLI documentation](./docs/cli#fest-cli)
 
 ## Deployment
 
@@ -116,12 +66,19 @@ See [CLI documentation](./docs/cli#fest-cli)
 
 Deploy this app to heroku and use the heroku scheduler to run the sync job on a cron.
 
-Once the app is deployed, you will need to configure the environmental variables above. Use the heroku web console, or the terminal:
+Once the app is deployed, you will need to configure the environmental variables above. Use the heroku web console, or the terminal.
+
+For facebook:
 
 ```bash
 heroku config:set FACEBOOK_APP_ID='<facebook-app-id>'
 heroku config:set FACEBOOK_APP_SECRET='<facebook-app-secret>'
 heroku config:set FACEBOOK_PAGE_ID='<facebook-page-id-or-alias>'
+```
+
+For Google:
+
+```bash
 heroku config:set GOOGLE_ACCOUNT_TYPE='service_account'
 heroku config:set GOOGLE_CALENDAR_ID='<optional-google-calendar-id>'
 heroku config:set GOOGLE_CLIENT_EMAIL='<google-service-client-email>'
@@ -131,10 +88,24 @@ heroku config:set GOOGLE_PRIVATE_KEY_ID='<google-private-key-id'
 heroku config:set GOOGLE_SCOPE='https://www.googleapis.com/auth/calendar'
 ```
 
-Finally, go into the heroku scheduler config and set the cron job to use the script:
+For WordPress:
 
 ```bash
-python -m fest.main sync
+heroku config:set WORDPRESS_ENDPOINT='<wordpress-host>/xmlrpc.php'
+heroku config:set WORDPRESS_USERNAME='<wordpress-user>'
+heroku config:set WORDPRESS_APP_PASSWORD='<wordpress-app-password>'
+```
+
+For The Events Calendar Plugin:
+
+```bash
+heroku config:set TRIBE_ENDPOINT='<wordpress-host>/wp-json/tribe/events/v1'
+```
+
+Write a script to sync the events or use the CLI entrypoint:
+
+```bash
+python -m fest.main --help
 ```
 
 ## TODO

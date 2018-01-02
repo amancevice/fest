@@ -3,12 +3,12 @@ from setuptools import setup
 
 CLI = ['click >= 6.7.0, < 6.8', 'ipython']
 GOOGLE = ['google >= 1.9.3, < 2', 'google-api-python-client >= 1.6.4, < 2']
-TRIBE = ['python-wordpress-xmlrpc >= 2.3.0, < 2.4']
-ALL = CLI + GOOGLE + TRIBE
+WORDPRESS = ['python-wordpress-xmlrpc >= 2.3.0, < 2.4']
+ALL = CLI + GOOGLE + WORDPRESS
 
 
 setup(name='fest',
-      version='0.2.0a4',
+      version='0.2.0b0',
       author='amancevice',
       author_email='smallweirdnum@gmail.com',
       packages=['fest'],
@@ -21,5 +21,5 @@ setup(name='fest',
       extras_require={'all': ALL,
                       'cli': CLI,
                       'google': GOOGLE,
-                      'tribe': TRIBE},
+                      'wordpress': WORDPRESS},
       entry_points={'console_scripts': ['fest=fest.main:fest']})

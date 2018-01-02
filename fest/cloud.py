@@ -306,9 +306,7 @@ class CalendarAPI(bases.BaseAPI):
 
         # Execute batch request
         if dryrun is False:
-            self.logger.info('EXECUTE')
             return batch.execute()
-        self.logger.debug('DRYRUN')
         return None
 
 
