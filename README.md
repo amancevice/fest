@@ -80,6 +80,22 @@ gcal = cloud.get_calendar('<google-calendar-id>')
 gcal.sync_events(upcoming)
 ```
 
+Sync to The Events Calendar
+
+```python
+import fest.tribe
+
+# Connect to WordPress/Tribe
+tribe = fest.tribe.TribeAPI.from_credentials(
+    wordpress_endpoint='<wordpress-endpoint>',
+    wordpress_username='<wordpress-username>',
+    wordpress_app_password='<wordpress-app-password>',
+    tribe_endpoint='<tribe-rest-api-endpoint>')
+
+# Sync events
+tribe.sync_events(upcoming)
+```
+
 ## Deployment
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
