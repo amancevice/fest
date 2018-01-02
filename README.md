@@ -40,24 +40,44 @@ pip install fest[all]        # Installs all pips
 
 ### Basic Use
 
+Get facebook events
+
 ```python
-import fest
+import fest.graph
 
 # Connect to Graph API & get page
-graph = fest.GraphAPI.from_credentials(
+graph = fest.graph.GraphAPI.from_credentials(
     app_id='<app_id>',
     app_secret='<app_secret>')
 page = graph.get_page('<page_id_or_alias>')
 
-# Get ALL events
-events = page.get_events()  
-
-# Get UPCOMING events
+# Get upcoming events
 upcoming = page.get_events(time_filter='upcoming')
 
-# Iterate over events
+# Iterate over all events
 for event in page.iter_events():
   print(event)
+```
+
+Sync to Google
+
+```python
+import fest.google
+
+# Connect to Google Cloud
+cloud = fest.CalendarAPI.from_credentials(
+    scopes=['https://www.googleapis.com/auth/calendar'],
+    service_type='service_account',
+    private_key_id='<private_key_id>',
+    private_key='<private_key>',
+    client_email='<client_email>',
+    client_id='<client_id>')
+
+# Get Google Calendar
+gcal = cloud.get_calendar('<google-calendar-id>')
+
+# Sync events
+gcal.sync_events(upcoming)
 ```
 
 ## Deployment
