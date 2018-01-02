@@ -299,9 +299,8 @@ class CalendarAPI(bases.BaseAPI):
                 request = service.insert(calendarId=calendar_id,
                                          body=insert.struct)
                 batch.add(request)
-                self.logger.info('CREATE %s/%s :: %s',
+                self.logger.info('CREATE %s :: %s',
                                  calendar_id,
-                                 google_event['id'],
                                  facebook_event['id'])
 
         # Execute batch request
