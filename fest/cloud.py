@@ -314,6 +314,23 @@ class GoogleCalendar(bases.BaseObject):
 
         :param object service: GoogleCloud instance
     """
+    @staticmethod
+    def from_facebook(facebook_page, tz, service=None):
+        """ Helper to convert a FacebookEvent to a GoogleEvent.
+
+            :param object facebook_page: FacebookPage instance
+            :param tz str: Timezone for calendar
+            :param object service: Optional GoogleCloud service instance
+            :returns object: GoogleCalendar instance
+        """
+        # pylint: disable=invalid-name
+        return GoogleCalendar(
+            service=service,
+            description=facebook_page.description_string(),
+            summary=facebook_page.get('name'),
+            location=facebook_page.location_string(),
+            timeZone=tz)
+
     def add_event(self, facebook_event):
         """ Add facebook event.
 
@@ -433,3 +450,4 @@ class GoogleEvent(bases.BaseObject):
 
 
 graph.FacebookEvent.to_google = GoogleEvent.from_facebook
+graph.FacebookPage.to_google = GoogleCalendar.from_facebook
