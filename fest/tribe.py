@@ -42,18 +42,18 @@ class TribeAPI(bases.BaseAPI):
         service.tribe_endpoint = tribe_endpoint or TRIBE_ENDPOINT
         return cls(service)
 
-    def add_event(self, facebook_event):
-        """ Add facebook event.
+    def add_event(self, source_event):
+        """ Add event.
 
-            :param object facebook_event: FacebookEvent instance
+            :param object source_event: Event instance
         """
-        event = facebook_event.to_tribe()
+        event = source_event.to_tribe()
         post = event['post']
         tribe_event = event['tribe_event']
 
         # Create WordPress post
         request = wp.methods.posts.NewPost(post)
-        self.logger.info('CREATE %s', facebook_event['id'])
+        self.logger.info('CREATE %s', source_event['id'])
         post.id = self.service.call(request)
 
         # Create tribe event
@@ -132,20 +132,20 @@ class TribeAPI(bases.BaseAPI):
                 yield WordPressPost(body)
             kwargs['offset'] = kwargs['offset'] + kwargs['number']
 
-    def patch_event(self, post, facebook_event):
-        """ Patch facebook event.
+    def patch_event(self, post, source_event):
+        """ Patch event.
 
             :param str post: WordPressPost instance
-            :param object facebook_event: FacebookEvent instance
+            :param object source_event: Event instance
         """
         # Patch digest
         for field in post.custom_fields:
             if field['key'] == 'facebook_digest':
-                field['value'] = facebook_event.digest()
+                field['value'] = source_event.digest()
         request = wp.methods.posts.EditPost(post.id, post)
-        self.logger.info('EDIT %s :: %s', post.id, facebook_event['id'])
+        self.logger.info('EDIT %s :: %s', post.id, source_event['id'])
         if self.service.call(request):
-            event = facebook_event.to_tribe()
+            event = source_event.to_tribe()
             tribe_event = event['tribe_event']
             tribe_endpoint = "{}/events/{}".format(self.service.tribe_endpoint,
                                                    post.id)
@@ -153,68 +153,69 @@ class TribeAPI(bases.BaseAPI):
             return requests.post(tribe_endpoint,
                                  headers=self.basic_auth(),
                                  json=tribe_event)
-        self.logger.error('ERROR %s :: %s', post.id, facebook_event['id'])
+        self.logger.error('ERROR %s :: %s', post.id, source_event['id'])
         return None
 
-    def sync_event(self, facebook_event, dryrun=False):
-        """ Synchronize facebook event with tribe.
+    def sync_event(self, source_event, dryrun=False):
+        """ Synchronize event with tribe.
 
-            :param object facebook_event: Facebook event instance
+            :param object source_event: Event instance
             :param bool dryrun: Toggle execute request
         """
         # Attempt to patch existing event
         for post in self.iter_posts():
-            if post.source_id == facebook_event['id']:
+            if post.source_id == source_event.source_id:
                 # Apply patch
-                if post.source_digest != facebook_event.digest():
+                if post.source_digest != source_event.digest():
                     if dryrun is False:
-                        return self.patch_event(post, facebook_event)
+                        return self.patch_event(post, source_event)
                     else:
                         self.logger.debug('DRYRUN PATCH %s :: %s',
                                           post.id,
-                                          facebook_event['id'])
+                                          source_event.source_id)
                 # No op
                 self.logger.debug('NO-OP %s :: %s',
                                   post.id,
-                                  facebook_event['id'])
+                                  source_event.source_id)
                 return None
         # Add event if no events can be patched
         if dryrun is False:
-            return self.add_event(facebook_event)
-        self.logger.debug('DRYRUN CREATE %s', facebook_event['id'])
+            return self.add_event(source_event)
+        self.logger.debug('DRYRUN CREATE %s', source_event.source_id)
         return None
 
-    def sync_events(self, facebook_events, dryrun=False):
-        """ Synchronize facebook events with calendar.
+    def sync_events(self, source_events, dryrun=False):
+        """ Synchronize events with calendar.
 
-            :param list[object] facebook_events: FacebookEvent instances
+            :param list[object] source_events: Event instances
             :param bool dryrun: Toggle execute batch request
         """
         postmap = {x.source_id: x for x in self.iter_posts()}
 
-        # Add or patch facebook events
-        for facebook_event in facebook_events:
+        # Add or patch events
+        for source_event in source_events:
             # Patch event if digests differ (otherwise no op)
-            if facebook_event['id'] in postmap:
-                post = postmap[facebook_event['id']]
-                if post.source_digest != facebook_event.digest():
+            if source_event.source_id in postmap:
+                post = postmap[source_event.source_id]
+                if post.source_digest != source_event.digest():
                     if dryrun is False:
-                        self.patch_event(post, facebook_event)
+                        self.patch_event(post, source_event)
                     else:
                         self.logger.debug('DRYRUN PATCH %s :: %s',
                                           post.id,
-                                          facebook_event['id'])
+                                          source_event.source_id)
                 else:
                     self.logger.debug('NO-OP %s :: %s',
                                       post.id,
-                                      facebook_event['id'])
+                                      source_event.source_id)
 
             # Insert new event
             else:
                 if dryrun is False:
-                    self.add_event(facebook_event)
+                    self.add_event(source_event)
                 else:
-                    self.logger.debug('DRYRUN CREATE %s', facebook_event['id'])
+                    self.logger.debug('DRYRUN CREATE %s',
+                                      source_event.source_id)
 
 
 class WordPressPost(wp.WordPressPost):
