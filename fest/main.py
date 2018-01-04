@@ -189,6 +189,8 @@ def fest_google_shell(ctx):
 def fest_google_sync(ctx, dryrun, facebook_id, force_patch, google_id,
                      sync_all):
     """ Sync a facebook page. """
+    # pylint: disable=too-many-arguments
+
     # Get facebook events
     page = ctx.obj['graph'].get_page(facebook_id)
     time_filter = None if sync_all else 'upcoming'
