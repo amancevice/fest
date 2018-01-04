@@ -262,11 +262,13 @@ class CalendarAPI(bases.BaseAPI):
         # Add event if no events can be patched
         return self.add_event(calendar_id, source_event)
 
-    def sync_events(self, calendar_id, source_events, dryrun=False):
+    def sync_events(self, calendar_id, source_events, force=False,
+                    dryrun=False):
         """ Synchronize events with calendar.
 
             :param str calendar_id: Google Calendar ID
             :param list[object] source_events: Event instances
+            :param bool force: Force patching without checking digest
             :param bool dryrun: Toggle execute batch request
         """
         eventmap = {x.source_id: x for x in self.iter_events(calendar_id)}
@@ -278,7 +280,8 @@ class CalendarAPI(bases.BaseAPI):
             # Patch event if digests differ (otherwise no op)
             if source_event.source_id in eventmap:
                 google_event = eventmap[source_event.source_id]
-                if google_event.source_digest != source_event.digest():
+                do_patch = google_event.source_digest != source_event.digest()
+                if force or do_patch:
                     patch = source_event.to_google()
                     request = service.patch(calendarId=calendar_id,
                                             eventId=google_event['id'],
@@ -306,6 +309,7 @@ class CalendarAPI(bases.BaseAPI):
         # Execute batch request
         if dryrun is False:
             return batch.execute()
+        self.logger.debug('DRYRUN')
         return None
 
 
@@ -393,13 +397,17 @@ class GoogleCalendar(bases.BaseObject):
         """
         return self.service.sync_event(self['id'], source_event)
 
-    def sync_events(self, source_events, dryrun=False):
+    def sync_events(self, source_events, force=False, dryrun=False):
         """ Synchronize events with calendar.
 
             :param list[object] source_events: Event instances
+            :param bool force: Force patching without checking digest
             :param bool dryrun: Toggle execute batch request
         """
-        return self.service.sync_events(self['id'], source_events, dryrun)
+        return self.service.sync_events(self['id'],
+                                        source_events,
+                                        force,
+                                        dryrun)
 
 
 class GoogleEvent(bases.BaseObject):

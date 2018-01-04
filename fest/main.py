@@ -176,6 +176,9 @@ def fest_google_shell(ctx):
 @click.option('-f', '--facebook-id',
               envvar='FACEBOOK_PAGE_ID',
               help='Facebook Page ID')
+@click.option('-p', '--force-patch',
+              help='Force a patch without checking the digest',
+              is_flag=True)
 @click.option('-g', '--google-id',
               envvar='GOOGLE_CALENDAR_ID',
               help='Google Calendar ID')
@@ -183,7 +186,8 @@ def fest_google_shell(ctx):
               help='Sync all events, not just upcoming',
               is_flag=True)
 @click.pass_context
-def fest_google_sync(ctx, dryrun, facebook_id, google_id, sync_all):
+def fest_google_sync(ctx, dryrun, facebook_id, force_patch, google_id,
+                     sync_all):
     """ Sync a facebook page. """
     # Get facebook events
     page = ctx.obj['graph'].get_page(facebook_id)
@@ -191,7 +195,7 @@ def fest_google_sync(ctx, dryrun, facebook_id, google_id, sync_all):
     events = page.get_events(time_filter=time_filter)
 
     gcal = ctx.obj['cloud'].get_calendar(google_id)
-    gcal.sync_events(events, dryrun)
+    gcal.sync_events(events, force_patch, dryrun)
 
 
 @fest_tribe.command('shell')
@@ -215,11 +219,14 @@ def fest_tribe_shell(ctx):
 @click.option('-f', '--facebook-id',
               envvar='FACEBOOK_PAGE_ID',
               help='Facebook Page ID')
+@click.option('-p', '--force-patch',
+              help='Force a patch without checking the digest',
+              is_flag=True)
 @click.option('-a', '--sync-all',
               help='Sync all events, not just upcoming',
               is_flag=True)
 @click.pass_context
-def fest_tribe_sync(ctx, dryrun, facebook_id, sync_all):
+def fest_tribe_sync(ctx, dryrun, facebook_id, force_patch, sync_all):
     """ Sync a facebook page. """
     # Get facebook events
     page = ctx.obj['graph'].get_page(facebook_id)
@@ -228,7 +235,7 @@ def fest_tribe_sync(ctx, dryrun, facebook_id, sync_all):
 
     # Sync to Tribe
     tribe = ctx.obj['tribe']
-    tribe.sync_events(events, dryrun)
+    tribe.sync_events(events, force_patch, dryrun)
 
 
 if __name__ == '__main__':

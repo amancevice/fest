@@ -156,38 +156,30 @@ class TribeAPI(bases.BaseAPI):
         self.logger.error('ERROR %s :: %s', post.id, source_event['id'])
         return None
 
-    def sync_event(self, source_event, dryrun=False):
+    def sync_event(self, source_event):
         """ Synchronize event with tribe.
 
             :param object source_event: Event instance
-            :param bool dryrun: Toggle execute request
         """
         # Attempt to patch existing event
         for post in self.iter_posts():
             if post.source_id == source_event.source_id:
                 # Apply patch
                 if post.source_digest != source_event.digest():
-                    if dryrun is False:
-                        return self.patch_event(post, source_event)
-                    else:
-                        self.logger.debug('DRYRUN PATCH %s :: %s',
-                                          post.id,
-                                          source_event.source_id)
+                    return self.patch_event(post, source_event)
                 # No op
                 self.logger.debug('NO-OP %s :: %s',
                                   post.id,
                                   source_event.source_id)
                 return None
         # Add event if no events can be patched
-        if dryrun is False:
-            return self.add_event(source_event)
-        self.logger.debug('DRYRUN CREATE %s', source_event.source_id)
-        return None
+        return self.add_event(source_event)
 
-    def sync_events(self, source_events, dryrun=False):
+    def sync_events(self, source_events, force=False, dryrun=False):
         """ Synchronize events with calendar.
 
             :param list[object] source_events: Event instances
+            :param bool force: Force patching without checking digest
             :param bool dryrun: Toggle execute batch request
         """
         postmap = {x.source_id: x for x in self.iter_posts()}
@@ -197,7 +189,7 @@ class TribeAPI(bases.BaseAPI):
             # Patch event if digests differ (otherwise no op)
             if source_event.source_id in postmap:
                 post = postmap[source_event.source_id]
-                if post.source_digest != source_event.digest():
+                if force or post.source_digest != source_event.digest():
                     if dryrun is False:
                         self.patch_event(post, source_event)
                     else:
