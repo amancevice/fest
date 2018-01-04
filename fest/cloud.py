@@ -99,7 +99,7 @@ class CalendarAPI(bases.BaseAPI):
         return batch.execute()
 
     def create_calendar(self, source_calendar, tz):
-        """ Create calendar from FacebookPage object.
+        """ Create calendar.
 
             :param object source_calendar: Source calendar object
             :param str tz: Timezone of calendar
@@ -111,7 +111,7 @@ class CalendarAPI(bases.BaseAPI):
         return GoogleCalendar(self.service, **request.execute())
 
     def delete_calendar(self, calendar_id):
-        """ Create calendar from FacebookPage object.
+        """ Delete calendar.
 
             :param str calendar_id: Google Calendar ID
         """
@@ -266,7 +266,7 @@ class CalendarAPI(bases.BaseAPI):
         """ Synchronize events with calendar.
 
             :param str calendar_id: Google Calendar ID
-            :param list[object] source_events: FacebookEvent instances
+            :param list[object] source_events: Event instances
             :param bool dryrun: Toggle execute batch request
         """
         eventmap = {x.source_id: x for x in self.iter_events(calendar_id)}
@@ -332,7 +332,7 @@ class GoogleCalendar(bases.BaseObject):
             timeZone=tz)
 
     def add_event(self, source_event):
-        """ Add facebook event.
+        """ Add event.
 
             :param object source_event: Event instance
         """
@@ -444,8 +444,7 @@ class GoogleEvent(bases.BaseObject):
             end={'dateTime': end_time.strftime('%Y-%m-%dT%H:%M:%S'),
                  'timeZone': facebook_event.timezone()},
             extendedProperties={
-                'shared': {'facebookId': facebook_event.source_id,
-                           'digest': facebook_event.digest(),
+                'shared': {'digest': facebook_event.digest(),
                            'sourceId': facebook_event.source_id}})
         return google_event
 
