@@ -158,7 +158,7 @@ def fest_google_share(ctx, email, google_id):
 @fest_google.command('shell')
 @click.pass_context
 def fest_google_shell(ctx):
-    """ Sync a facebook page. """
+    """ Enter an IPython shell. """
     # pylint: disable=unused-variable
     try:
         import IPython
@@ -203,7 +203,7 @@ def fest_google_sync(ctx, dryrun, facebook_id, force_patch, google_id,
 @fest_tribe.command('shell')
 @click.pass_context
 def fest_tribe_shell(ctx):
-    """ Sync a facebook page. """
+    """ Enter an IPython shell. """
     # pylint: disable=unused-variable
     try:
         import IPython
