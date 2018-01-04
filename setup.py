@@ -8,7 +8,7 @@ ALL = CLI + GOOGLE + WORDPRESS
 
 
 setup(name='fest',
-      version='0.2.1',
+      version='0.3.0a0',
       author='amancevice',
       author_email='smallweirdnum@gmail.com',
       packages=['fest'],
