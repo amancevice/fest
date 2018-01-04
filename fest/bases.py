@@ -49,3 +49,13 @@ class BaseObject(collections.Mapping):
     def digest(self):
         """ Return SHA-1 of struct. """
         return hashlib.sha1(str(self).encode('utf-8')).hexdigest()
+
+    @property
+    def source_digest(self):
+        """ Get digest of source object. """
+        pass
+
+    @property
+    def source_id(self):
+        """ Get ID of source object. """
+        pass

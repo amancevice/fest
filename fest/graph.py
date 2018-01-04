@@ -202,3 +202,13 @@ class FacebookEvent(bases.BaseObject):
         except TypeError:
             delta = delta or {'hours': 1}
             return self.start_time() + timedelta(**delta)
+
+    @property
+    def source_id(self):
+        """ The source of a facebook object is itself. """
+        return self['id']
+
+    @property
+    def source_digest(self):
+        """ The source of a facebook object is itself. """
+        return self.digest()

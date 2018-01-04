@@ -178,7 +178,7 @@ class CalendarAPI(bases.BaseAPI):
             :returns object: GoogleEvent instance
         """
         for google_event in self.iter_events(calendar_id):
-            if facebook_id == google_event.facebook_id:
+            if facebook_id == google_event.source_id:
                 return google_event
         return None
 
@@ -251,9 +251,9 @@ class CalendarAPI(bases.BaseAPI):
         """
         # Attempt to patch existing event
         for google_event in self.iter_events(calendar_id):
-            if google_event.facebook_id == facebook_event['id']:
+            if google_event.source_id == facebook_event['id']:
                 # Apply patch
-                if google_event.facebook_digest != facebook_event.digest():
+                if google_event.source_digest != facebook_event.digest():
                     return self.patch_event(calendar_id,
                                             google_event['id'],
                                             facebook_event)
@@ -269,7 +269,7 @@ class CalendarAPI(bases.BaseAPI):
             :param list[object] facebook_events: FacebookEvent instances
             :param bool dryrun: Toggle execute batch request
         """
-        eventmap = {x.facebook_id: x for x in self.iter_events(calendar_id)}
+        eventmap = {x.source_id: x for x in self.iter_events(calendar_id)}
         batch = self.service.new_batch_http_request()
         service = self.service.events()
 
@@ -278,7 +278,7 @@ class CalendarAPI(bases.BaseAPI):
             # Patch event if digests differ (otherwise no op)
             if facebook_event['id'] in eventmap:
                 google_event = eventmap[facebook_event['id']]
-                if google_event.facebook_digest != facebook_event.digest():
+                if google_event.source_digest != facebook_event.digest():
                     patch = facebook_event.to_google()
                     request = service.patch(calendarId=calendar_id,
                                             eventId=google_event['id'],
@@ -405,7 +405,7 @@ class GoogleCalendar(bases.BaseObject):
 class GoogleEvent(bases.BaseObject):
     """ Google Event Object. """
     @property
-    def facebook_id(self):
+    def source_id(self):
         """ Helper to return facebook ID of event.
 
             :returns str: FacebookEvent ID
@@ -415,7 +415,7 @@ class GoogleEvent(bases.BaseObject):
         return private.get('facebookId')
 
     @property
-    def facebook_digest(self):
+    def source_digest(self):
         """ Helper to return facebook digest of event.
 
             :returns str: FacebookEvent ID

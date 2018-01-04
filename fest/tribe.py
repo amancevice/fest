@@ -164,9 +164,9 @@ class TribeAPI(bases.BaseAPI):
         """
         # Attempt to patch existing event
         for post in self.iter_posts():
-            if post.facebook_id == facebook_event['id']:
+            if post.source_id == facebook_event['id']:
                 # Apply patch
-                if post.facebook_digest != facebook_event.digest():
+                if post.source_digest != facebook_event.digest():
                     if dryrun is False:
                         return self.patch_event(post, facebook_event)
                     else:
@@ -190,14 +190,14 @@ class TribeAPI(bases.BaseAPI):
             :param list[object] facebook_events: FacebookEvent instances
             :param bool dryrun: Toggle execute batch request
         """
-        postmap = {x.facebook_id: x for x in self.iter_posts()}
+        postmap = {x.source_id: x for x in self.iter_posts()}
 
         # Add or patch facebook events
         for facebook_event in facebook_events:
             # Patch event if digests differ (otherwise no op)
             if facebook_event['id'] in postmap:
                 post = postmap[facebook_event['id']]
-                if post.facebook_digest != facebook_event.digest():
+                if post.source_digest != facebook_event.digest():
                     if dryrun is False:
                         self.patch_event(post, facebook_event)
                     else:
@@ -228,7 +228,7 @@ class WordPressPost(wp.WordPressPost):
                 self.set_custom_field(key, value)
 
     @property
-    def facebook_fields(self):
+    def source_fields(self):
         """ Get custom facebook fields.
 
             :returns dict: {'facebook_<key>': '<value>'}
@@ -237,20 +237,20 @@ class WordPressPost(wp.WordPressPost):
                 if x['key'].startswith('facebook_')}
 
     @property
-    def facebook_id(self):
+    def source_id(self):
         """ Helper to return facebook ID of event.
 
             :returns str: FacebookEvent ID
         """
-        return self.facebook_fields.get('facebook_id')
+        return self.source_fields.get('facebook_id')
 
     @property
-    def facebook_digest(self):
+    def source_digest(self):
         """ Helper to return facebook digest of event.
 
             :returns str: FacebookEvent ID
         """
-        return self.facebook_fields.get('facebook_digest')
+        return self.source_fields.get('facebook_digest')
 
     def set_custom_field(self, key, value):
         """ Helper to set/update custom field. """
