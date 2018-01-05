@@ -115,12 +115,24 @@ class GraphAPI(bases.BaseAPI):
 class FacebookObject(bases.BaseObject):
     """ Base FacebookObject. """
     @property
+    def source_id(self):
+        """ The source of a facebook object is itself. """
+        return self['id']
+
+    @property
+    def source_digest(self):
+        """ The source of a facebook object is itself. """
+        return self.digest()
+
+    @property
     def url(self):
+        """ Facebook URL of object. """
         return 'https://www.facebook.com/{id}'.format(id=self.source_id)
 
 
 class FacebookPage(FacebookObject):
     """ Facebook Page Object. """
+    # pylint: disable=too-many-ancestors
     DESCRIPTION_KEYS = ('about', 'mission')
     LOCATION_KEYS = ('name', 'street', 'city', 'state', 'country', 'zip')
 
@@ -168,6 +180,7 @@ class FacebookPage(FacebookObject):
 
 class FacebookEvent(FacebookObject):
     """ Facebook Event Object. """
+    # pylint: disable=too-many-ancestors
     LOCATION_KEYS = ('name', 'street', 'city', 'state', 'country', 'zip')
 
     def location_string(self, *keys):
@@ -215,13 +228,3 @@ class FacebookEvent(FacebookObject):
         except TypeError:
             delta = delta or {'hours': 1}
             return self.start_time() + timedelta(**delta)
-
-    @property
-    def source_id(self):
-        """ The source of a facebook object is itself. """
-        return self['id']
-
-    @property
-    def source_digest(self):
-        """ The source of a facebook object is itself. """
-        return self.digest()

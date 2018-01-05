@@ -47,6 +47,11 @@ def test_iter_paging():
                       fest.graph.FacebookEvent(graph, c='d')]
 
 
+def test_facebook_object_url():
+    fbobj = fest.graph.FacebookObject(None, id='1234567890')
+    assert fbobj.url == 'https://www.facebook.com/1234567890'
+
+
 @mock.patch('fest.graph.GraphAPI.from_credentials')
 def test_graph_api_from_env(mock_creds):
     graph = fest.graph.GraphAPI.from_env()
