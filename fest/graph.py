@@ -112,7 +112,14 @@ class GraphAPI(bases.BaseAPI):
                 break
 
 
-class FacebookPage(bases.BaseObject):
+class FacebookObject(bases.BaseObject):
+    """ Base FacebookObject. """
+    @property
+    def url(self):
+        return 'https://www.facebook.com/{id}'.format(id=self.source_id)
+
+
+class FacebookPage(FacebookObject):
     """ Facebook Page Object. """
     DESCRIPTION_KEYS = ('about', 'mission')
     LOCATION_KEYS = ('name', 'street', 'city', 'state', 'country', 'zip')
@@ -159,7 +166,7 @@ class FacebookPage(bases.BaseObject):
         return self.service.iter_events(self['id'], time_filter)
 
 
-class FacebookEvent(bases.BaseObject):
+class FacebookEvent(FacebookObject):
     """ Facebook Event Object. """
     LOCATION_KEYS = ('name', 'street', 'city', 'state', 'country', 'zip')
 
