@@ -1,6 +1,56 @@
+from datetime import datetime
+
+from dateutil import parser as dateparser
 import facebook
 import fest.graph
 import mock
+
+
+class MockGraphAPI(facebook.GraphAPI):
+    def __init__(self, *args, **kwargs):
+        super(MockGraphAPI, self).__init__(*args, **kwargs)
+        self.access_token = 'expired_token'
+        self.app_id = 'app_id'
+        self.app_secret = 'app_secret'
+
+    def get_app_access_token(self, *args, **kwargs):
+        return 'mock_access_token'
+
+    def get_object(self, *args, **kwargs):
+        if self.access_token == 'expired_token':
+            raise facebook.GraphAPIError('TEST ERROR')
+        resp = {'data': [{'a': 'b'}, {'c': 'd'}],
+                'paging': {'cursors': {'after': 'ABCDEF12345'}}}
+        if kwargs.get('after') == 'ABCDEF12345':
+            resp['paging']['cursors']['after'] = 'GHIJKL67890'
+        elif kwargs.get('after') == 'GHIJKL67890':
+            del resp['paging']
+        return resp
+
+
+def test_authenticate():
+    graph = fest.graph.GraphAPI(MockGraphAPI())
+    assert graph.service.access_token == 'expired_token'
+    graph.get_object('1234567890')
+    assert graph.service.access_token == 'mock_access_token'
+
+
+def test_iter_paging():
+    graph = fest.graph.GraphAPI(MockGraphAPI())
+    events = list(graph.get_events('page_id'))
+
+    assert events == [fest.graph.FacebookEvent(graph, a='b'),
+                      fest.graph.FacebookEvent(graph, c='d'),
+                      fest.graph.FacebookEvent(graph, a='b'),
+                      fest.graph.FacebookEvent(graph, c='d'),
+                      fest.graph.FacebookEvent(graph, a='b'),
+                      fest.graph.FacebookEvent(graph, c='d')]
+
+
+@mock.patch('fest.graph.GraphAPI.from_credentials')
+def test_graph_api_from_env(mock_creds):
+    graph = fest.graph.GraphAPI.from_env()
+    mock_creds.assert_called_once_with()
 
 
 def test_graph_api_init():
@@ -43,6 +93,13 @@ def test_graph_api_iter_events(mock_obj, mock_tok):
     assert events == [{'a': 'b'}, {'c': 'd'}]
 
 
+@mock.patch('fest.graph.GraphAPI.get_object')
+def test_graph_api_get_event(mock_obj):
+    graph = fest.graph.GraphAPI.from_credentials('APP_ID', 'APP_SECRET')
+    graph.get_event('1234567890')
+    mock_obj.assert_called_once_with('1234567890')
+
+
 def test_facebook_page_description_string():
     page = fest.graph.FacebookPage(mock.MagicMock(),
                                    id='1234567890',
@@ -77,7 +134,80 @@ def test_facebook_page_iter_events(mock_graph):
     mock_graph.iter_events.assert_called_once_with('1234567890', 'upcoming')
 
 
+@mock.patch('fest.graph.GraphAPI')
+def test_facebook_page_get_event(mock_graph):
+    page = fest.graph.FacebookPage(mock_graph, id='1234567890')
+    event = page.get_event('1234567890')
+    mock_graph.get_event.assert_called_once_with('1234567890')
+
+
 def test_facebook_event_init():
     graph = fest.graph.GraphAPI.from_credentials('APP_ID', 'APP_SECRET')
     obj = fest.graph.FacebookEvent(graph)
     assert obj.service == graph
+
+
+def test_facebook_event_location_string():
+    event = fest.graph.FacebookEvent(None, **{
+        "place": {
+            "location": {
+                "city": "Cambridge",
+                "country": "United States",
+                "latitude": 42.36364,
+                "longitude": -71.103733,
+                "state": "MA",
+                "street": "45 Pearl St",
+                "zip": "02139"
+            },
+            "name": "Cambridge Public Library - Central Square Branch"}})
+    assert event.location_string() == 'Cambridge Public Library - '\
+        'Central Square Branch 45 Pearl St Cambridge MA United States 02139'
+
+
+def test_facebook_event_location_string_err():
+    event = fest.graph.FacebookEvent(None, **{
+        "place": {
+            "name": "Cambridge Public Library - Central Square Branch"}})
+    assert event.location_string() == \
+        'Cambridge Public Library - Central Square Branch'
+
+
+def test_facebook_event_timezone():
+    start_time = '2018-01-04T15:00:00-0500'
+    event = fest.graph.FacebookEvent(None, start_time=start_time)
+    assert event.timezone() == 'UTC-05:00'
+
+
+def test_facebook_event_timezone_err():
+    start_time = '2018-01-04T15:00:00'
+    event = fest.graph.FacebookEvent(None, start_time=start_time)
+    assert event.timezone() is None
+
+
+def test_facebook_event_start():
+    start_time = '2018-01-04T15:00:00-0500'
+    event = fest.graph.FacebookEvent(None, start_time=start_time)
+    assert event.start_time() == dateparser.parse(start_time)
+
+
+def test_facebook_event_end_time():
+    end_time = '2018-01-04T15:00:00-0500'
+    event = fest.graph.FacebookEvent(None, end_time=end_time)
+    assert event.end_time() == dateparser.parse(end_time)
+
+
+def test_facebook_event_end_time_err():
+    start_time = '2018-01-04T15:00:00-0500'
+    end_time = '2018-01-04T16:00:00-0500'
+    event = fest.graph.FacebookEvent(None, start_time=start_time)
+    assert event.end_time() == dateparser.parse(end_time)
+
+
+def test_facebook_event_source_id():
+    event = fest.graph.FacebookEvent(None, **{'id': '1234567890'})
+    assert event.source_id == event['id']
+
+
+def test_facebook_event_source_digest():
+    event = fest.graph.FacebookEvent(None, fizz='buzz')
+    assert event.source_digest == event.digest()
