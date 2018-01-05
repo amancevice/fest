@@ -2,10 +2,10 @@
 Facebook Graph API tools.
 """
 import os
-from datetime import datetime
 from datetime import timedelta
 
 import facebook
+from dateutil import parser as dateparser
 from fest import bases
 
 FACEBOOK_APP_ID = os.getenv('FACEBOOK_APP_ID')
@@ -181,15 +181,22 @@ class FacebookEvent(bases.BaseObject):
     def timezone(self):
         """ Get timezone from event. """
         try:
-            start = datetime.strptime(self.get('start_time'),
-                                      '%Y-%m-%dT%H:%M:%S%z')
-            return start.tzname()
-        except TypeError:
+            # pylint: disable=no-member
+            timestamp = dateparser.parse(self.get('start_time'))
+            offset = timestamp.tzinfo.utcoffset(timestamp)
+            sign = '-' if offset.total_seconds() < 0 else '+'
+            seconds = offset.total_seconds()
+            hours = str(abs(int(seconds / 60**2))).rjust(2, '0')
+            minutes = str(abs(int(seconds % 60**2))).rjust(2, '0')
+            return 'UTC{sign}{hours}:{minutes}'.format(sign=sign,
+                                                       hours=hours,
+                                                       minutes=minutes)
+        except (AttributeError, TypeError):
             return None
 
     def start_time(self):
         """ Helper to get start_time datetime object. """
-        return datetime.strptime(self.get('start_time'), '%Y-%m-%dT%H:%M:%S%z')
+        return dateparser.parse(self.get('start_time'))
 
     def end_time(self, **delta):
         """ Helper to get end_time datetime object.
@@ -197,8 +204,7 @@ class FacebookEvent(bases.BaseObject):
             :param dict delta: Optional timedelta if end_time not given
         """
         try:
-            return datetime.strptime(self.get('end_time'),
-                                     '%Y-%m-%dT%H:%M:%S%z')
+            return dateparser.parse(self.get('end_time'))
         except TypeError:
             delta = delta or {'hours': 1}
             return self.start_time() + timedelta(**delta)

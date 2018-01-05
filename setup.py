@@ -17,7 +17,8 @@ setup(name='fest',
       long_description=textwrap.dedent(
           '''See GitHub_ for documentation.
           .. _GitHub: https://github.com/amancevice/fest'''),
-      install_requires=['facebook-sdk >= 2.0.0, < 3'],
+      install_requires=['facebook-sdk >= 2.0.0',
+                        'python-dateutil >= 2.6.1'],
       extras_require={'all': ALL,
                       'cli': CLI,
                       'google': GOOGLE,

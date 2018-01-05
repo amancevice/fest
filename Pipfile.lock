@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c0c122bc85c464b72a8b41b3c9ba3c2fcb8fdf786bc2144f6de5f37bf2ca8d7e"
+            "sha256": "5e250d1f7b3f5cff9734f9070c8536120494ca5728f92bd967b5ecf7e86bd272"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -211,6 +211,13 @@
                 "sha256:dbae1046def0efb574852fab9e90209b23f556367b5a320c0bcb871c77c3e8cc"
             ],
             "version": "==2.2.0"
+        },
+        "python-dateutil": {
+            "hashes": [
+                "sha256:95511bae634d69bc7329ba55e646499a842bc4ec342ad54a8cdb65645a0aad3c",
+                "sha256:891c38b2a02f5bb1be3e4793866c8df49c7d19baabf9c1bad62547e0b4866aca"
+            ],
+            "version": "==2.6.1"
         },
         "python-wordpress-xmlrpc": {
             "hashes": [
