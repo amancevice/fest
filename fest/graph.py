@@ -143,7 +143,7 @@ class FacebookPage(FacebookObject):
         """
         keys = keys or self.DESCRIPTION_KEYS
         values = [self[x] for x in keys if x in self]
-        values += ["facebook#{id}".format(**self.struct)]
+        values += [self.url]
         return '\n'.join(values) or None
 
     def location_string(self, *keys):

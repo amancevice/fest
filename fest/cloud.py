@@ -138,11 +138,11 @@ class CalendarAPI(bases.BaseAPI):
     def get_calendar_by_facebook_id(self, facebook_id):
         """ Get Google Calendar by facebook page ID.
 
-            Searches descriptions for "facebook#<facebook_id>.
+            Searches descriptions for facebbook URL.
 
             :param str facebook_id: ID of facebook page
         """
-        key = 'facebook#{}'.format(facebook_id)
+        key = 'https://www.facebook.com/{id}'.format(id=facebook_id)
         for cal in self.iter_calendars():
             if key in cal['description']:
                 return cal

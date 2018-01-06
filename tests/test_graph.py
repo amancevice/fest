@@ -110,7 +110,8 @@ def test_facebook_page_description_string():
                                    id='1234567890',
                                    about='ABOUT.',
                                    mission='MISSION.')
-    assert page.description_string() == 'ABOUT.\nMISSION.\nfacebook#1234567890'
+    assert page.description_string() == \
+        'ABOUT.\nMISSION.\nhttps://www.facebook.com/1234567890'
 
 
 def test_facebook_page_location_string():

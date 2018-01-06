@@ -138,9 +138,9 @@ def test_cloud_get_calendar():
 
 @mock.patch('fest.cloud.CalendarAPI.iter_calendars')
 def test_cloud_get_calendar_by_facebook_id(mock_iter):
-    cals = [{'id': '1', 'description': 'facebook#1234567890'},
-            {'id': '2', 'description': 'facebook#9876543210'},
-            {'id': '3', 'description': 'facebook#7777777777'}]
+    cals = [{'id': '1', 'description': 'https://www.facebook.com/1234567890'},
+            {'id': '2', 'description': 'https://www.facebook.com/9876543210'},
+            {'id': '3', 'description': 'https://www.facebook.com/7777777777'}]
     mock_iter.return_value = iter(cals)
     cloud = MockCalendarAPI()
     ret = cloud.get_calendar_by_facebook_id('7777777777')
@@ -237,7 +237,9 @@ def test_calendar_from_facebook():
         name='Page name')
     gcal = fest.cloud.GoogleCalendar.from_facebook(page, 'America/New_York')
     assert gcal.struct == {
-        'description': 'About page\nMission statement\nfacebook#1234567890',
+        'description': 'About page\n'
+                       'Mission statement\n'
+                       'https://www.facebook.com/1234567890',
         'location': 'Boston MA United States 02205',
         'summary': 'Page name',
         'timeZone': 'America/New_York'}
