@@ -1,4 +1,5 @@
 import fest.cloud
+import fest.graph
 import mock
 
 
@@ -217,3 +218,143 @@ def test_cloud_patch_event():
          .events.return_value\
          .patch.return_value\
          .execute.assert_called_once_with()
+
+
+def test_calendar_from_facebook():
+    page = fest.graph.FacebookPage(
+        None,
+        about='About page',
+        id='1234567890',
+        location={
+            'city': 'Boston',
+            'country': 'United States',
+            'latitude': 42.3578,
+            'longitude': -71.0617,
+            'state': 'MA',
+            'zip': '02205'
+        },
+        mission='Mission statement',
+        name='Page name')
+    gcal = fest.cloud.GoogleCalendar.from_facebook(page, 'America/New_York')
+    assert gcal.struct == {
+        'description': 'About page\nMission statement\nfacebook#1234567890',
+        'location': 'Boston MA United States 02205',
+        'summary': 'Page name',
+        'timeZone': 'America/New_York'}
+
+
+def test_calendar_add_event():
+    event = mock.MagicMock()
+    gcal = fest.cloud.GoogleCalendar(mock.MagicMock(), id='cal_id')
+    gcal.add_event(event)
+    gcal.service.add_event.assert_called_once_with('cal_id', event)
+
+
+def test_calendar_add_owner():
+    gcal = fest.cloud.GoogleCalendar(mock.MagicMock(), id='cal_id')
+    gcal.add_owner('owner@me.com')
+    gcal.service.add_owner.assert_called_once_with('cal_id', 'owner@me.com')
+
+
+def test_calendar_clear_events():
+    gcal = fest.cloud.GoogleCalendar(mock.MagicMock(), id='cal_id')
+    gcal.clear_events()
+    gcal.service.clear_events.assert_called_once_with('cal_id')
+
+
+def test_calendar_get_events():
+    gcal = fest.cloud.GoogleCalendar(mock.MagicMock(), id='cal_id')
+    gcal.get_events()
+    gcal.service.iter_events.assert_called_once_with('cal_id')
+
+
+def test_calendar_get_event():
+    gcal = fest.cloud.GoogleCalendar(mock.MagicMock(), id='cal_id')
+    gcal.get_event('event_id')
+    gcal.service.get_event.assert_called_once_with('cal_id', 'event_id')
+
+
+def test_calendar_get_event_by_source_id():
+    gcal = fest.cloud.GoogleCalendar(mock.MagicMock(), id='cal_id')
+    gcal.get_event_by_source_id('1234567890')
+    gcal.service.get_event_by_source_id.assert_called_once_with(
+        'cal_id', '1234567890')
+
+
+def test_calendar_iter_events():
+    gcal = fest.cloud.GoogleCalendar(mock.MagicMock(), id='cal_id')
+    gcal.iter_events()
+    gcal.service.iter_events.assert_called_once_with('cal_id')
+
+
+def test_calendar_patch_event():
+    event = mock.MagicMock()
+    gcal = fest.cloud.GoogleCalendar(mock.MagicMock(), id='cal_id')
+    gcal.patch_event('event_id', event)
+    gcal.service.patch_event.assert_called_once_with(
+        'cal_id', 'event_id', event)
+
+
+def test_calendar_sync_event():
+    event = mock.MagicMock()
+    gcal = fest.cloud.GoogleCalendar(mock.MagicMock(), id='cal_id')
+    gcal.sync_event(event)
+    gcal.service.sync_event.assert_called_once_with('cal_id', event)
+
+
+def test_calendar_sync_events():
+    events = mock.MagicMock()
+    gcal = fest.cloud.GoogleCalendar(mock.MagicMock(), id='cal_id')
+    gcal.sync_events(events)
+    gcal.service.sync_events.assert_called_once_with(
+        'cal_id', events, False, False)
+
+
+def test_event_source_id():
+    gevent = fest.cloud.GoogleEvent(
+        mock.MagicMock,
+        id='event_id',
+        extendedProperties={
+            'shared': {'sourceId': 'source_id', 'digest': 'x'}})
+    assert gevent.source_id == 'source_id'
+
+
+def test_event_source_digest():
+    gevent = fest.cloud.GoogleEvent(
+        mock.MagicMock,
+        id='event_id',
+        extendedProperties={
+            'shared': {'sourceId': 'source_id', 'digest': 'x'}})
+    assert gevent.source_digest == 'x'
+
+
+@mock.patch('fest.bases.BaseObject.digest')
+def test_event_from_facebook(mock_dig):
+    event = fest.graph.FacebookEvent(
+        mock.MagicMock(),
+        description='desc',
+        end_time='2018-02-11T16:00:00-0500',
+        id='1234567890',
+        name='name',
+        place={'name': 'place'},
+        start_time='2018-02-11T11:00:00-0500')
+    gevent = fest.cloud.GoogleEvent.from_facebook(event)
+    assert gevent.struct == {
+        'description': 'desc\n\nhttps://www.facebook.com/1234567890',
+        'start': {
+            'dateTime': '2018-02-11T11:00:00',
+            'timeZone': 'UTC-05:00'
+        },
+        'extendedProperties': {
+            'shared': {
+                'digest': mock_dig.return_value,
+                'sourceId': '1234567890'
+            }
+        },
+        'end': {
+            'dateTime': '2018-02-11T16:00:00',
+            'timeZone': 'UTC-05:00'
+        },
+        'summary': 'name',
+        'location': 'place'
+    }

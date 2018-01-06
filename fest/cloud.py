@@ -440,17 +440,22 @@ class GoogleEvent(bases.BaseObject):
             :param object service: Optional GoogleCloud service instance
             :returns object: GoogleEvent instance
         """
+        summary = facebook_event.get('name')
+        description = "{desc}\n\n{url}"\
+            .format(desc=facebook_event.get('description'),
+                    url=facebook_event.url)
         start_time = facebook_event.start_time()
         end_time = facebook_event.end_time()
+        timezone = facebook_event.timezone()
+        start_time = start_time.strftime('%Y-%m-%dT%H:%M:%S')
+        end_time = end_time.strftime('%Y-%m-%dT%H:%M:%S')
         google_event = GoogleEvent(
             service=service,
-            summary=facebook_event.get('name'),
-            description=facebook_event.get('description'),
+            summary=summary,
+            description=description,
             location=facebook_event.location_string(),
-            start={'dateTime': start_time.strftime('%Y-%m-%dT%H:%M:%S'),
-                   'timeZone': facebook_event.timezone()},
-            end={'dateTime': end_time.strftime('%Y-%m-%dT%H:%M:%S'),
-                 'timeZone': facebook_event.timezone()},
+            start={'dateTime': start_time, 'timeZone': timezone},
+            end={'dateTime': end_time, 'timeZone': timezone},
             extendedProperties={
                 'shared': {'digest': facebook_event.digest(),
                            'sourceId': facebook_event.source_id}})
