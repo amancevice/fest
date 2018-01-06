@@ -277,7 +277,7 @@ class TribeEvent(bases.BaseObject):
             'title': facebook_event['name']})
 
         # Tribe Event
-        description = "{desc}\n\n{url}"\
+        description = "{desc}\n\n<a href=\"{url}\">View on facebook</a>"\
             .format(desc=facebook_event.get('description'),
                     url=facebook_event.url)
         start_date = facebook_event.start_time().strftime('%Y-%m-%d %H:%M:%S')
