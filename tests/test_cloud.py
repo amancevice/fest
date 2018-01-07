@@ -5,7 +5,7 @@ import mock
 
 class MockCalendarAPI(fest.cloud.CalendarAPI):
     def __init__(self, service=None):
-        super(MockCalendarAPI, self).__init__(mock.MagicMock())
+        super(MockCalendarAPI, self).__init__(service or mock.MagicMock())
 
 
 @mock.patch('fest.cloud.CalendarAPI.from_credentials')

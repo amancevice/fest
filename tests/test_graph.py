@@ -102,7 +102,9 @@ def test_graph_api_iter_events(mock_obj, mock_tok):
 def test_graph_api_get_event(mock_obj):
     graph = fest.graph.GraphAPI.from_credentials('APP_ID', 'APP_SECRET')
     graph.get_event('1234567890')
-    mock_obj.assert_called_once_with('1234567890')
+    mock_obj.assert_called_once_with(
+        '1234567890?fields='
+        'cover,description,end_time,id,name,place,start_time')
 
 
 def test_facebook_page_description_string():

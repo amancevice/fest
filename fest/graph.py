@@ -65,12 +65,16 @@ class GraphAPI(bases.BaseAPI):
         path = '{}?fields={}'.format(page_id, ','.join(sorted(fields)))
         return FacebookPage(self, **self.get_object(path))
 
-    def get_event(self, event_id):
+    def get_event(self, event_id, *fields):
         """ Get page event.
 
             :param str event_id: facebook event ID
+            :param tuple(str) fields: Optional page fields
         """
-        return FacebookEvent(self, **self.get_object(event_id))
+        fields = {'cover', 'description', 'end_time', 'id', 'name', 'place',
+                  'start_time'} | set(fields)
+        path = '{}?fields={}'.format(event_id, ','.join(sorted(fields)))
+        return FacebookEvent(self, **self.get_object(path))
 
     def get_events(self, page_id, time_filter=None):
         """ Get list of page events.
