@@ -277,12 +277,14 @@ class TribeEvent(bases.BaseObject):
             'title': facebook_event['name']})
 
         # Tribe Event
-        image = facebook_event.get('cover', {}).get('source')
+        image_url = facebook_event.get('cover', {}).get('source')
+        desc = facebook_event.get('description')
+        if image_url:
+            desc = '<img src="{}"/>\n'.format(image_url) + desc
         start_date = facebook_event.start_time().strftime('%Y-%m-%d %H:%M:%S')
         end_date = facebook_event.end_time().strftime('%Y-%m-%d %H:%M:%S')
-        tribe_event = {'description': facebook_event.get('description'),
+        tribe_event = {'description': desc,
                        'end_date': end_date,
-                       'image': image,
                        'slug': facebook_event.get('id'),
                        'start_date': start_date,
                        'timezone': facebook_event.timezone(),
