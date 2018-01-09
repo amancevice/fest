@@ -62,10 +62,10 @@ for event in page.iter_events():
 Sync to Google
 
 ```python
-import fest.google
+import fest.cloud
 
 # Connect to Google Cloud
-cloud = fest.CalendarAPI.from_credentials(
+cloud = fest.cloud.CalendarAPI.from_credentials(
     scopes=['https://www.googleapis.com/auth/calendar'],
     service_type='service_account',
     private_key_id='<private_key_id>',
