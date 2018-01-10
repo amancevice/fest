@@ -278,8 +278,8 @@ class TribeEvent(bases.BaseObject):
 
         # Tribe Event
         image_url = facebook_event.get('cover', {}).get('source')
-        desc = facebook_event.get('description')
-        if image_url:
+        desc = facebook_event.get('description') or facebook_event.get('name')
+        if image_url and desc:
             desc = '<img src="{}"/>\n'.format(image_url) + desc
         start_date = facebook_event.start_time().strftime('%Y-%m-%d %H:%M:%S')
         end_date = facebook_event.end_time().strftime('%Y-%m-%d %H:%M:%S')
