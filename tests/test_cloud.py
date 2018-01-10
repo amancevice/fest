@@ -1,3 +1,4 @@
+import googleapiclient
 import fest.cloud
 import fest.graph
 import mock
@@ -6,6 +7,30 @@ import mock
 class MockCalendarAPI(fest.cloud.CalendarAPI):
     def __init__(self, service=None):
         super(MockCalendarAPI, self).__init__(service or mock.MagicMock())
+
+
+class MockCalendarListRequest(googleapiclient.http.HttpRequest):
+    def __init__(self, pageToken):
+        self.pageToken = pageToken
+
+    def execute(self, http=None, num_retries=0):
+        import ipdb; ipdb.set_trace()
+
+
+class MockCalendarListResource(googleapiclient.discovery.Resource):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def list(self, pageToken=None, **kwargs):
+        return MockCalendarListRequest(pageToken)
+
+
+class MockCloudService(googleapiclient.discovery.Resource):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def calendarList(self):
+        return MockCalendarListResource()
 
 
 @mock.patch('fest.cloud.CalendarAPI.from_credentials')
@@ -360,3 +385,153 @@ def test_event_from_facebook(mock_dig):
         'summary': 'name',
         'location': 'place'
     }
+
+
+def test_cloud_iter_calendars():
+    cloud = MockCalendarAPI()
+    cloud.service\
+         .calendarList.return_value\
+         .list.return_value\
+         .execute.return_value = {'items': [{'id': '1'}, {'id': '2'}]}
+    assert list(cloud.iter_calendars()) == [
+        fest.cloud.GoogleCalendar(cloud, id='1'),
+        fest.cloud.GoogleCalendar(cloud, id='2')]
+
+
+def test_cloud_iter_events():
+    cloud = MockCalendarAPI()
+    cloud.service\
+         .events.return_value\
+         .list.return_value\
+         .execute.return_value = {'items': [{'id': '1'}, {'id': '2'}]}
+    assert list(cloud.iter_events('cal_id')) == [
+        fest.cloud.GoogleEvent(cloud, id='1'),
+        fest.cloud.GoogleEvent(cloud, id='2')]
+
+
+@mock.patch('fest.cloud.CalendarAPI.iter_events')
+@mock.patch('fest.cloud.CalendarAPI.patch_event')
+def test_cloud_sync_event_patch(mock_patch, mock_iter):
+    cloud = MockCalendarAPI()
+    mock_iter.return_value = iter([
+        fest.cloud.GoogleEvent(
+            cloud,
+            id='1',
+            extendedProperties={
+                'shared': {
+                    'sourceId': 'A',
+                    'digest': 'abcdefg'}})])
+    mock_event = mock.MagicMock()
+    mock_event.source_id = 'A'
+    mock_event.digest.return_value = '1234567'
+    cloud.sync_event('cal_id', mock_event)
+    mock_patch.assert_called_once_with('cal_id', '1', mock_event)
+
+
+@mock.patch('fest.cloud.CalendarAPI.iter_events')
+@mock.patch('fest.cloud.CalendarAPI.add_event')
+def test_cloud_sync_event_add(mock_add, mock_iter):
+    cloud = MockCalendarAPI()
+    mock_iter.return_value = iter([])
+    mock_event = mock.MagicMock()
+    mock_event.source_id = 'A'
+    mock_event.digest.return_value = '1234567'
+    cloud.sync_event('cal_id', mock_event)
+    mock_add.assert_called_once_with('cal_id', mock_event)
+
+
+@mock.patch('fest.cloud.CalendarAPI.iter_events')
+@mock.patch('fest.cloud.CalendarAPI.patch_event')
+@mock.patch('fest.cloud.CalendarAPI.add_event')
+def test_cloud_sync_event_no_op(mock_add, mock_patch, mock_iter):
+    cloud = MockCalendarAPI()
+    mock_iter.return_value = iter([
+        fest.cloud.GoogleEvent(
+            cloud,
+            id='1',
+            extendedProperties={
+                'shared': {
+                    'sourceId': 'A',
+                    'digest': 'abcdefg'}})])
+    mock_event = mock.MagicMock()
+    mock_event.source_id = 'A'
+    mock_event.digest.return_value = 'abcdefg'
+    cloud.sync_event('cal_id', mock_event)
+    mock_patch.assert_not_called()
+    mock_add.assert_not_called()
+
+
+@mock.patch('fest.cloud.CalendarAPI.iter_events')
+def test_cloud_sync_events(mock_iter):
+    cloud = MockCalendarAPI()
+    mock_iter.return_value = iter([
+        fest.cloud.GoogleEvent(
+            cloud,
+            id='1',
+            extendedProperties={
+                'shared': {
+                    'sourceId': 'A',
+                    'digest': 'abcdefg'}})])
+    mock_event1 = mock.MagicMock()
+    mock_event1.source_id = 'A'
+    mock_event1.digest.return_value = 'abcdefg'
+    mock_event2 = mock.MagicMock()
+    mock_event2.source_id = 'A'
+    mock_event2.digest.return_value = '1234567'
+    mock_event3 = mock.MagicMock()
+    mock_event3.source_id = 'B'
+    mock_event3.digest.return_value = '9876543'
+    cloud.sync_events('cal_id', [mock_event1, mock_event2, mock_event3])
+    cloud.service\
+         .events.return_value\
+         .patch.assert_called_once_with(
+             calendarId='cal_id',
+             eventId='1',
+             body=mock_event2.to_google.return_value.struct)
+    cloud.service\
+         .events.return_value\
+         .insert.assert_called_once_with(
+             calendarId='cal_id',
+             body=mock_event3.to_google.return_value.struct)
+    cloud.service\
+         .new_batch_http_request.return_value\
+         .execute.assert_called_once_with()
+
+
+@mock.patch('fest.cloud.CalendarAPI.iter_events')
+def test_cloud_sync_events_dryrun(mock_iter):
+    cloud = MockCalendarAPI()
+    mock_iter.return_value = iter([
+        fest.cloud.GoogleEvent(
+            cloud,
+            id='1',
+            extendedProperties={
+                'shared': {
+                    'sourceId': 'A',
+                    'digest': 'abcdefg'}})])
+    mock_event1 = mock.MagicMock()
+    mock_event1.source_id = 'A'
+    mock_event1.digest.return_value = 'abcdefg'
+    mock_event2 = mock.MagicMock()
+    mock_event2.source_id = 'A'
+    mock_event2.digest.return_value = '1234567'
+    mock_event3 = mock.MagicMock()
+    mock_event3.source_id = 'B'
+    mock_event3.digest.return_value = '9876543'
+    cloud.sync_events('cal_id',
+                      [mock_event1, mock_event2, mock_event3],
+                      dryrun=True)
+    cloud.service\
+         .events.return_value\
+         .patch.assert_called_once_with(
+             calendarId='cal_id',
+             eventId='1',
+             body=mock_event2.to_google.return_value.struct)
+    cloud.service\
+         .events.return_value\
+         .insert.assert_called_once_with(
+             calendarId='cal_id',
+             body=mock_event3.to_google.return_value.struct)
+    cloud.service\
+         .new_batch_http_request.return_value\
+         .execute.assert_not_called()
