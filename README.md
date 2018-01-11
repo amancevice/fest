@@ -137,6 +137,15 @@ For The Events Calendar Plugin:
 heroku config:set TRIBE_ENDPOINT='<wordpress-host>/wp-json/tribe/events/v1'
 ```
 
+If your event posts have custom fields they can be configured using ENV variables where the variable is prefixed with `WP_CUSTOM_FIELD_`.
+
+Ex:
+
+```bash
+WP_CUSTOM_FIELD_FIZZ='buzz'  # {'key': 'fizz', 'value': 'buzz'}
+WP_CUSTOM_FIELD_JAZZ='funk'  # {'key': 'jazz', 'value': 'funk'}
+```
+
 ## TODO
 
 * Full test coverage
