@@ -1,10 +1,9 @@
 import textwrap
 from setuptools import setup
 
-CLI = ['click >= 6.7.0, < 6.8', 'ipython']
 GOOGLE = ['google >= 1.9.3, < 2', 'google-api-python-client >= 1.6.4, < 2']
 WORDPRESS = ['python-wordpress-xmlrpc >= 2.3.0, < 2.4']
-ALL = CLI + GOOGLE + WORDPRESS
+ALL = GOOGLE + WORDPRESS
 
 
 setup(name='fest',
@@ -20,7 +19,5 @@ setup(name='fest',
       install_requires=['facebook-sdk >= 2.0.0',
                         'python-dateutil >= 2.6.1'],
       extras_require={'all': ALL,
-                      'cli': CLI,
                       'google': GOOGLE,
-                      'wordpress': WORDPRESS},
-      entry_points={'console_scripts': ['fest=fest.main:fest']})
+                      'wordpress': WORDPRESS})

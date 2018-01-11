@@ -34,7 +34,6 @@ Use extras to install support for supported sync endpoint(s):
 ```bash
 pip install fest[google]     # Installs Google pips
 pip install fest[wordpress]  # Installs WordPress pips
-pip install fest[cli]        # Install `fest` CLI pips
 pip install fest[all]        # Installs all pips
 ```
 
@@ -136,12 +135,6 @@ For The Events Calendar Plugin:
 
 ```bash
 heroku config:set TRIBE_ENDPOINT='<wordpress-host>/wp-json/tribe/events/v1'
-```
-
-Write a script to sync the events or use the CLI entrypoint:
-
-```bash
-python -m fest.main --help
 ```
 
 ## TODO
