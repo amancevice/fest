@@ -2,6 +2,7 @@
 Facebook Graph API tools.
 """
 import os
+from copy import deepcopy
 from datetime import timedelta
 
 import facebook
@@ -105,7 +106,16 @@ class GraphAPI(bases.BaseAPI):
             path += '?time_filter={}'.format(time_filter)
         response = self.get_object(path)
         for item in response['data']:
-            yield FacebookEvent(self, **item)
+            # Yield recurring events as individual FacebookEvent items
+            try:
+                for event_time in item['event_times']:
+                    this_event = deepcopy(item)
+                    del this_event['event_times']
+                    this_event.update(event_time)
+                    yield FacebookEvent(self, **this_event)
+            # Yield normal FacebookEvent
+            except KeyError:
+                yield FacebookEvent(self, **item)
         while True:
             try:
                 after = response['paging']['cursors']['after']

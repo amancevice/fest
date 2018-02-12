@@ -219,3 +219,21 @@ def test_facebook_event_source_id():
 def test_facebook_event_source_digest():
     event = fest.graph.FacebookEvent(None, fizz='buzz')
     assert event.source_digest == event.digest()
+
+
+@mock.patch('facebook.GraphAPI.get_app_access_token')
+@mock.patch('facebook.GraphAPI.get_object')
+def test_graph_api_iter_events_recurring(mock_obj, mock_tok):
+    mock_obj.return_value = {
+        'data': [
+            {'a': 'b'},
+            {'c': 'd'},
+            {'event_times': [
+                {'e': 'f'},
+                {'g': 'h'}
+            ]}
+        ]
+    }
+    graph = fest.graph.GraphAPI.from_credentials('APP_ID', 'APP_SECRET')
+    events = list(graph.iter_events('page_id', time_filter='upcoming'))
+    assert events == [{'a': 'b'}, {'c': 'd'}, {'e': 'f'}, {'g': 'h'}]
