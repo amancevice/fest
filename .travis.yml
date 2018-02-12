@@ -5,16 +5,20 @@ python:
 - '3.4'
 - '3.5'
 - '3.6'
-install: pip install .[all] codecov pytest pytest-cov pylint
+install:
+- pip install .[all] codecov pytest pytest-cov pylint
 script:
 - py.test
 - pylint fest
-after_success: codecov
+after_success:
+- codecov
 deploy:
   provider: pypi
   user: amancevice
   password:
     secure: mqxJ3Mo5W4smcdRsj9GTR7Mp3b6Gx5nf9BR+qJ8bF2u/+i575fIo6DMn1Kuck9GDxCF0AVxdUIxChvi4mVw3PISVgDCbRVu0zSqOqUvl/lDbM6NSZKUiD0f4V5ZA5mzz28sw3fSlMK+6zgA/m8kY2QoAcQj8++ugm1EcPfwtWDq4sDL9KHMCKrIMbYvBVh/m7lTncFV8JuzwSXUkpTbodD0RFRLACwdiGDNpQr+U+D5AKnIyuT5tWc9JV9FRARGOiwG90PT6IOR3TYOZOqu7g7VfY+HrukBoAZ/WXBMWnh/6hxkbKt5ohCeDwLI59jhnc9G0OGPrwl644WVHx9rHD7mz9vLmvoOlRYIRnE8w/JAb0BNyWbdAdFKv+0jW33zDA6pSfGfxXDpVyUJ1VvEJsvtPJUcWogQ4EGFdXJYe0SXfxZiBLAV7T/W4tTkljGp7zXu5ESej6BOo4diBg27SbDkRiF0CM8R51z4cS7E5h53mbp33Tmw7qIqiABBbfP2XVqij8Tkt++2FnrLmP/OxHq9QajogJM81JrcqtvPlDFrRQ/p0STmUdGHLwxRgwkS2eCxVoMrRc6N6Qf3ro/c8MSSkRlexdv7FZn6XrNXPdo4CXZKYgiwrDxUSqnB4Zx7XXAHHGRfK4Cwj1y0ZH/RyS68ODietE8AgfZuekypDs2s=
   on:
-    tags: true
+    distributions: sdist bdist_wheel
+    python: '3.6'
     repo: amancevice/fest
+    tags: true
