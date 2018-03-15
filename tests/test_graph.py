@@ -94,7 +94,8 @@ def test_graph_api_get_events(mock_iter, mock_tok):
 def test_graph_api_iter_events(mock_obj, mock_tok):
     mock_obj.return_value = {'data': [{'a': 'b'}, {'c': 'd'}]}
     graph = fest.graph.GraphAPI.from_credentials('APP_ID', 'APP_SECRET')
-    events = list(graph.iter_events('page_id', time_filter='upcoming'))
+    events = list(graph.iter_events(
+        'page_id', event_state_filter=['canceled'], time_filter='upcoming'))
     assert events == [{'a': 'b'}, {'c': 'd'}]
 
 

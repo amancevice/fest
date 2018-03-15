@@ -141,6 +141,16 @@ def test_cloud_delete_calendar():
          .execute.assert_called_once_with()
 
 
+def test_cloud_delete_event():
+    cloud = MockCalendarAPI()
+    cloud.delete_event('cal_id', 'event_id')
+    cloud.service.events.assert_called_once_with()
+    cloud.service\
+         .events.return_value\
+         .delete.assert_called_once_with(calendarId='cal_id',
+                                         eventId='event_id')
+
+
 @mock.patch('fest.cloud.CalendarAPI.iter_calendars')
 def test_cloud_get_calendars(mock_iter):
     cloud = MockCalendarAPI()

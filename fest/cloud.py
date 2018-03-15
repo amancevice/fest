@@ -121,6 +121,18 @@ class CalendarAPI(bases.BaseAPI):
         self.logger.warning('DELETE %s', calendar_id)
         return request.execute()
 
+    def delete_event(self, calendar_id, event_id):
+        """ Patch event in calendar.
+
+            :param str calendar_id: Google Calendar ID
+            :param str event_id: Google Event ID
+        """
+        service = self.service.events()
+        request = service.delete(calendarId=calendar_id,
+                                 eventId=event_id)
+        self.logger.warning('DELETE %s/%s', calendar_id, event_id)
+        return request.execute()
+
     def get_calendars(self):
         """ Get list of Google Calendars. """
         return list(self.iter_calendars())

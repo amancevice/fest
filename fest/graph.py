@@ -77,13 +77,14 @@ class GraphAPI(bases.BaseAPI):
         path = '{}?fields={}'.format(event_id, ','.join(sorted(fields)))
         return FacebookEvent(self, **self.get_object(path))
 
-    def get_events(self, page_id, time_filter=None):
+    def get_events(self, page_id, event_state_filter=None, time_filter=None):
         """ Get list of page events.
 
             :param str page_id: facebook page ID
+            :param list<str> event_state_filter: Optional event state filter
             :param str time_filter: Optional time filter
         """
-        return list(self.iter_events(page_id, time_filter))
+        return list(self.iter_events(page_id, event_state_filter, time_filter))
 
     @authenticated
     def get_object(self, facebook_id, **args):
@@ -95,15 +96,19 @@ class GraphAPI(bases.BaseAPI):
         self.logger.info('GET /%s %r', facebook_id, args)
         return self.service.get_object(facebook_id, **args)
 
-    def iter_events(self, page_id, time_filter=None):
+    def iter_events(self, page_id, event_state_filter=None, time_filter=None):
         """ Iterate over page events.
 
             :param str page_id: facebook page ID
+            :param list<str> event_state_filter: Optional event state filter
             :param str time_filter: Optional time filter
         """
-        path = '{}/events'.format(page_id)
+        params = []
+        if event_state_filter:
+            params.append('event_state_filter={!r}'.format(event_state_filter))
         if time_filter:
-            path += '?time_filter={}'.format(time_filter)
+            params.append('time_filter={}'.format(time_filter))
+        path = '{}/events?{}'.format(page_id, '&'.join(params))
         response = self.get_object(path)
         for item in response['data']:
             # Yield recurring events as individual FacebookEvent items
