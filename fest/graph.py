@@ -182,19 +182,21 @@ class FacebookPage(FacebookObject):
         """
         return self.service.get_event(event_id)
 
-    def get_events(self, time_filter=None):
+    def get_events(self, event_state_filter=None, time_filter=None):
         """ Get list of page events.
 
             :param str time_filter: Optional time filter
         """
-        return self.service.get_events(self['id'], time_filter)
+        return self.service.get_events(
+            self['id'], event_state_filter, time_filter)
 
-    def iter_events(self, time_filter=None):
+    def iter_events(self, event_state_filter=None, time_filter=None):
         """ Iterate over page events.
 
             :param str time_filter: Optional time filter
         """
-        return self.service.iter_events(self['id'], time_filter)
+        return self.service.iter_events(
+            self['id'], event_state_filter, time_filter)
 
 
 class FacebookEvent(FacebookObject):
