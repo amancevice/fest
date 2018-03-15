@@ -7,7 +7,7 @@ ALL = GOOGLE + WORDPRESS
 
 
 setup(name='fest',
-      version='0.5.1',
+      version='0.6.0',
       author='amancevice',
       author_email='smallweirdnum@gmail.com',
       packages=['fest'],
