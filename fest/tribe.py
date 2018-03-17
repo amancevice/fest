@@ -70,6 +70,29 @@ class TribeAPI(bases.BaseAPI):
         token = base64.standard_b64encode(auth.encode('utf-8'))
         return {'Authorization': 'Basic {}'.format(token.decode('utf-8'))}
 
+    def delete_event(self, post_id):
+        """ Delete event.
+
+            :param str post_id: WordPress post ID
+        """
+        # Delete tribe event
+        tribe_endpoint = "{}/events/{}".format(self.service.tribe_endpoint,
+                                               post_id)
+        self.logger.info('DELETE %s', tribe_endpoint)
+        requests.delete(tribe_endpoint, headers=self.basic_auth())
+
+        # Delete WordPress post
+        return self.delete_post(post_id)
+
+    def delete_post(self, post_id):
+        """ Delete tribe event post by post_id.
+
+            :param str post_id: WordPress post ID
+        """
+        request = wp.methods.posts.DeletePost(post_id)
+        self.logger.info('DELETE %s', post_id)
+        return self.service.call(request)
+
     def get_event(self, post_id):
         """ Get tribe event post by post_id.
 
@@ -178,14 +201,17 @@ class TribeAPI(bases.BaseAPI):
     def sync_events(self, source_events, force=False, dryrun=False):
         """ Synchronize events with calendar.
 
-            :param list[object] source_events: Event instances
+            :param dict source_events: Source event dictionary
             :param bool force: Force patching without checking digest
             :param bool dryrun: Toggle execute batch request
         """
         postmap = {x.source_id: x for x in self.iter_posts()}
 
+        upcoming = source_events.get('upcoming') or []
+        canceled = source_events.get('canceled') or []
+
         # Add or patch events
-        for source_event in source_events:
+        for source_event in upcoming:
             # Patch event if digests differ (otherwise no op)
             if source_event.source_id in postmap:
                 post = postmap[source_event.source_id]
@@ -208,6 +234,18 @@ class TribeAPI(bases.BaseAPI):
                 else:
                     self.logger.debug('DRYRUN CREATE %s',
                                       source_event.source_id)
+
+        # Delete canceled events
+        for source_event in canceled:
+            # Ignore events not in the postmap
+            if source_event.source_id in postmap:
+                post = postmap[source_event.source_id]
+                if dryrun is False:
+                    self.delete_event(post)
+                else:
+                    self.logger.info('DRYRUN DELETE %s :: %s',
+                                     post.id,
+                                     source_event.source_id)
 
 
 class WordPressPost(wp.WordPressPost):
