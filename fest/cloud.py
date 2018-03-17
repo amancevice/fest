@@ -268,16 +268,20 @@ class CalendarAPI(bases.BaseAPI):
         """ Synchronize events with calendar.
 
             :param str calendar_id: Google Calendar ID
-            :param list[object] source_events: Event instances
+            :param dict source_events: Source event dictionary
             :param bool force: Force patching without checking digest
             :param bool dryrun: Toggle execute batch request
         """
+        # pylint: disable=too-many-locals
         eventmap = {x.source_id: x for x in self.iter_events(calendar_id)}
         batch = self.service.new_batch_http_request()
         service = self.service.events()
 
+        upcoming = source_events.get('upcoming') or []
+        canceled = source_events.get('canceled') or []
+
         # Add or patch events
-        for source_event in source_events:
+        for source_event in upcoming:
             # Patch event if digests differ (otherwise no op)
             if source_event.source_id in eventmap:
                 google_event = eventmap[source_event.source_id]
@@ -305,6 +309,19 @@ class CalendarAPI(bases.BaseAPI):
                 batch.add(request)
                 self.logger.info('CREATE %s :: %s',
                                  calendar_id,
+                                 source_event.source_id)
+
+        # Delete canceled events
+        for source_event in canceled:
+            # Ignore events not in the eventmap
+            if source_event.source_id in eventmap:
+                google_event = eventmap[source_event.source_id]
+                request = service.delete(calendarId=calendar_id,
+                                         eventId=google_event['id'])
+                batch.add(request)
+                self.logger.info('DELETE %s/%s :: %s',
+                                 calendar_id,
+                                 google_event['id'],
                                  source_event.source_id)
 
         # Execute batch request
@@ -401,7 +418,7 @@ class GoogleCalendar(bases.BaseObject):
     def sync_events(self, source_events, force=False, dryrun=False):
         """ Synchronize events with calendar.
 
-            :param list[object] source_events: Event instances
+            :param dict source_events: Source event dictionary
             :param bool force: Force patching without checking digest
             :param bool dryrun: Toggle execute batch request
         """
