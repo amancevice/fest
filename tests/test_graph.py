@@ -134,7 +134,7 @@ def test_facebook_page_get_events(mock_graph):
     page = fest.graph.FacebookPage(mock_graph, id='1234567890')
     page.get_events(time_filter='upcoming')
     mock_graph.get_events.assert_called_once_with(
-        '1234567890', None, 'upcoming')
+        '1234567890', time_filter='upcoming')
 
 
 @mock.patch('fest.graph.GraphAPI')
@@ -142,7 +142,7 @@ def test_facebook_page_iter_events(mock_graph):
     page = fest.graph.FacebookPage(mock_graph, id='1234567890')
     page.iter_events(time_filter='upcoming')
     mock_graph.iter_events.assert_called_once_with(
-        '1234567890', None, 'upcoming')
+        '1234567890', time_filter='upcoming')
 
 
 @mock.patch('fest.graph.GraphAPI')

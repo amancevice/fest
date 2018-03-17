@@ -481,7 +481,14 @@ def test_cloud_sync_events(mock_iter):
             extendedProperties={
                 'shared': {
                     'sourceId': 'A',
-                    'digest': 'abcdefg'}})])
+                    'digest': 'abcdefg'}}),
+        fest.cloud.GoogleEvent(
+            cloud,
+            id='2',
+            extendedProperties={
+                'shared': {
+                    'sourceId': 'C',
+                    'digest': 'qwertyu'}})])
     mock_event1 = mock.MagicMock()
     mock_event1.source_id = 'A'
     mock_event1.digest.return_value = 'abcdefg'
@@ -491,7 +498,12 @@ def test_cloud_sync_events(mock_iter):
     mock_event3 = mock.MagicMock()
     mock_event3.source_id = 'B'
     mock_event3.digest.return_value = '9876543'
-    cloud.sync_events('cal_id', [mock_event1, mock_event2, mock_event3])
+    mock_event4 = mock.MagicMock()
+    mock_event4.source_id = 'C'
+    mock_event4.digest.return_value = 'qwertyu'
+    cloud.sync_events('cal_id', {
+        'upcoming': [mock_event1, mock_event2, mock_event3],
+        'canceled': [mock_event4]})
     cloud.service\
          .events.return_value\
          .patch.assert_called_once_with(
@@ -503,6 +515,11 @@ def test_cloud_sync_events(mock_iter):
          .insert.assert_called_once_with(
              calendarId='cal_id',
              body=mock_event3.to_google.return_value.struct)
+    cloud.service\
+         .events.return_value\
+         .delete.assert_called_once_with(
+             calendarId='cal_id',
+             eventId='2')
     cloud.service\
          .new_batch_http_request.return_value\
          .execute.assert_called_once_with()
@@ -529,7 +546,7 @@ def test_cloud_sync_events_dryrun(mock_iter):
     mock_event3.source_id = 'B'
     mock_event3.digest.return_value = '9876543'
     cloud.sync_events('cal_id',
-                      [mock_event1, mock_event2, mock_event3],
+                      {'upcoming': [mock_event1, mock_event2, mock_event3]},
                       dryrun=True)
     cloud.service\
          .events.return_value\
