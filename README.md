@@ -55,7 +55,7 @@ upcoming = page.get_events(time_filter='upcoming')
 
 # Iterate over all events
 for event in page.iter_events():
-  print(event)
+    print(event)
 ```
 
 Sync to Google
@@ -76,7 +76,7 @@ cloud = fest.cloud.CalendarAPI.from_credentials(
 gcal = cloud.get_calendar('<google-calendar-id>')
 
 # Sync events
-gcal.sync_events(upcoming)
+gcal.sync_events({'upcoming': upcoming})
 ```
 
 Sync to The Events Calendar
@@ -92,7 +92,7 @@ tribe = fest.tribe.TribeAPI.from_credentials(
     tribe_endpoint='<tribe-rest-api-endpoint>')
 
 # Sync events
-tribe.sync_events(upcoming)
+tribe.sync_events({'upcoming': upcoming})
 ```
 
 ## Deployment
@@ -108,7 +108,7 @@ For facebook:
 ```bash
 heroku config:set FACEBOOK_APP_ID='<facebook-app-id>'
 heroku config:set FACEBOOK_APP_SECRET='<facebook-app-secret>'
-heroku config:set FACEBOOK_PAGE_ID='<facebook-page-id-or-alias>'
+heroku config:set FACEBOOK_PAGE_NAME='<facebook-page-id-or-alias>'
 ```
 
 For Google:
