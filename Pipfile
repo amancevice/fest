@@ -1,0 +1,28 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+
+[packages]
+
+facebook-sdk = "*"
+google = "*"
+google-api-python-client = "*"
+python-dateutil = "*"
+python-wordpress-xmlrpc = "*"
+
+
+[dev-packages]
+
+ipython = "*"
+ipdb = "*"
+pytest = "*"
+pytest-cov = "*"
+mock = "*"
+
+
+[requires]
+
+python_version = "3.6"
