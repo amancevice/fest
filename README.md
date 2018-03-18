@@ -95,57 +95,6 @@ tribe = fest.tribe.TribeAPI.from_credentials(
 tribe.sync_events({'upcoming': upcoming})
 ```
 
-## Deployment
-
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
-
-Deploy this app to heroku and use the heroku scheduler to run the sync job on a cron.
-
-Once the app is deployed, you will need to configure the environmental variables above. Use the heroku web console, or the terminal.
-
-For facebook:
-
-```bash
-heroku config:set FACEBOOK_APP_ID='<facebook-app-id>'
-heroku config:set FACEBOOK_APP_SECRET='<facebook-app-secret>'
-heroku config:set FACEBOOK_PAGE_NAME='<facebook-page-id-or-alias>'
-```
-
-For Google:
-
-```bash
-heroku config:set GOOGLE_ACCOUNT_TYPE='service_account'
-heroku config:set GOOGLE_CALENDAR_ID='<optional-google-calendar-id>'
-heroku config:set GOOGLE_CLIENT_EMAIL='<google-service-client-email>'
-heroku config:set GOOGLE_CLIENT_ID='<google-client-id>'
-heroku config:set GOOGLE_PRIVATE_KEY='<google-private-key-multi-line-string'
-heroku config:set GOOGLE_PRIVATE_KEY_ID='<google-private-key-id'
-heroku config:set GOOGLE_SCOPE='https://www.googleapis.com/auth/calendar'
-```
-
-For WordPress:
-
-```bash
-heroku config:set WORDPRESS_ENDPOINT='<wordpress-host>/xmlrpc.php'
-heroku config:set WORDPRESS_USERNAME='<wordpress-user>'
-heroku config:set WORDPRESS_APP_PASSWORD='<wordpress-app-password>'
-```
-
-For The Events Calendar Plugin:
-
-```bash
-heroku config:set TRIBE_ENDPOINT='<wordpress-host>/wp-json/tribe/events/v1'
-```
-
-If your event posts have custom fields they can be configured using ENV variables where the variable is prefixed with `WP_CUSTOM_FIELD_`.
-
-Ex:
-
-```bash
-WP_CUSTOM_FIELD_FIZZ='buzz'  # {'key': 'fizz', 'value': 'buzz'}
-WP_CUSTOM_FIELD_JAZZ='funk'  # {'key': 'jazz', 'value': 'funk'}
-```
-
 ## TODO
 
 * Full test coverage
