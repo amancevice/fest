@@ -194,34 +194,37 @@ class CalendarAPI(bases.BaseAPI):
                 return google_event
         return None
 
-    def iter_calendars(self, page_token=None):
+    def iter_calendars(self, **kwargs):
         """ Iterate over Google Calendars. """
         service = self.service.calendarList()  # pylint: disable=no-member
-        request = service.list(pageToken=page_token)
+        request = service.list(**kwargs)
         result = request.execute()
         items = result.get('items', [])
         for item in items:
             self.logger.info('GET %s', item['id'])
             yield GoogleCalendar(self, **item)
         try:
-            for item in self.iter_calendars(result['nextPageToken']):
+            for item in self.iter_calendars(pageToken=result['nextPageToken']):
                 yield item  # pragma: no cover
         except KeyError:
             pass
 
-    def iter_events(self, calendar_id, page_token=None):
+    def iter_events(self, calendar_id, **kwargs):
         """ Iterate over all Google Calendar events.
 
             :param str calendar_id: Google Calendar ID
         """
         service = self.service.events()
-        request = service.list(calendarId=calendar_id, pageToken=page_token)
-        self.logger.info('GET %s/events %s', calendar_id, page_token or '')
+        request = service.list(calendarId=calendar_id, **kwargs)
+        self.logger.info(
+            'GET %s/events %s', calendar_id, kwargs.get('pageToken') or '')
         result = request.execute()
         for item in result.get('items', []):
             yield GoogleEvent(self, **item)
         try:
-            for item in self.iter_events(calendar_id, result['nextPageToken']):
+            for item in self.iter_events(calendar_id,
+                                         pageToken=result['nextPageToken'],
+                                         **kwargs):
                 yield item  # pragma: no cover
         except KeyError:
             pass
