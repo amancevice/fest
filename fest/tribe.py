@@ -283,6 +283,23 @@ class WordPressPost(wp.WordPressPost):
         """
         return self.source_fields.get('facebook_digest')
 
+    @staticmethod
+    def from_facebook(facebook_event):
+        """ Helper to convert a FacebookEvent to a WordPressPost.
+
+            :param object facebook_event: FacebookEvent instance
+            :returns object: WordPressPost instance
+        """
+        post = WordPressPost({
+            'custom_fields': [
+                {'key': 'facebook_id', 'value': facebook_event['id']},
+                {'key': 'facebook_digest', 'value': facebook_event.digest()}],
+            'post_status': 'publish',
+            'post_type': 'tribe_events',
+            'slug': facebook_event['id'],
+            'title': facebook_event['name']})
+        return post
+
     def set_custom_field(self, key, value):
         """ Helper to set/update custom field. """
         # pylint: disable=no-member
@@ -294,25 +311,17 @@ class WordPressPost(wp.WordPressPost):
 
 
 class TribeEvent(bases.BaseObject):
-    """ WordPressPost object.
-    """
+    """ WordPressPost object. """
     @staticmethod
     def from_facebook(facebook_event, service=None):
         """ Helper to convert a FacebookEvent to a WordPressPost.
 
             :param object facebook_event: FacebookEvent instance
             :param object service: Optional TribeAPI service instance
-            :returns object: WordPressPost instance
+            :returns object: TribeEvent instance
         """
         # WordPress post
-        post = WordPressPost({
-            'custom_fields': [
-                {'key': 'facebook_id', 'value': facebook_event['id']},
-                {'key': 'facebook_digest', 'value': facebook_event.digest()}],
-            'post_status': 'publish',
-            'post_type': 'tribe_events',
-            'slug': facebook_event['id'],
-            'title': facebook_event['name']})
+        post = facebook_event.to_wordpress()
 
         # Tribe Event
         image_url = facebook_event.get('cover', {}).get('source')
@@ -331,4 +340,5 @@ class TribeEvent(bases.BaseObject):
         return TribeEvent(service, post=post, tribe_event=tribe_event)
 
 
+graph.FacebookEvent.to_wordpress = WordPressPost.from_facebook
 graph.FacebookEvent.to_tribe = TribeEvent.from_facebook
