@@ -1,6 +1,7 @@
 """
 Google Cloud tools.
 """
+import base64
 import os
 from datetime import datetime
 from datetime import timedelta
@@ -26,6 +27,18 @@ class CalendarAPI(bases.BaseAPI):
 
         :param object service: Google Cloud service resource
     """
+    # pylint: disable=too-many-public-methods
+    @staticmethod
+    def get_calendar_url(calendar_id):
+        """ Get calendar URL.
+
+            :param str calendar_id: Google Calendar ID
+        """
+        utf8_encoded = calendar_id.encode('utf-8')
+        encoded_id = base64.standard_b64encode(utf8_encoded).decode('utf-8')
+        root_url = 'https://calendar.google.com/calendar/r?cid='
+        return '{}{}'.format(root_url, encoded_id.strip('='))
+
     @classmethod
     def from_env(cls):
         """ Create CalendarAPI object from ENV variables. """
@@ -359,6 +372,11 @@ class GoogleCalendar(bases.BaseObject):
 
         :param object service: GoogleCloud instance
     """
+    @property
+    def url(self):
+        """ Get URL of Google Calendar. """
+        return self.service.get_calendar_url(self['id'])
+
     @staticmethod
     def from_facebook(facebook_page, tz, service=None):
         """ Helper to convert a FacebookEvent to a GoogleEvent.

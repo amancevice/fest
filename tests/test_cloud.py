@@ -196,6 +196,12 @@ def test_cloud_get_calendar_by_facebook_id_none(mock_iter):
     assert ret is None
 
 
+def test_cloud_get_calendar_url():
+    cloud = MockCalendarAPI()
+    ret = cloud.get_calendar_url('9999999999')
+    assert ret == 'https://calendar.google.com/calendar/r?cid=OTk5OTk5OTk5OQ'
+
+
 def test_cloud_get_event():
     cloud = MockCalendarAPI()
     cloud.get_event('cal_id', 'event_id')
@@ -338,6 +344,12 @@ def test_calendar_get_today():
     gcal.get_today()
     gcal.service.get_today.assert_called_once_with(
         'cal_id', 'America/Los_Angeles')
+
+
+def test_calendar_url():
+    gcal = fest.cloud.GoogleCalendar(mock.MagicMock(), id='9999999999')
+    gcal.url
+    gcal.service.get_calendar_url.assert_called_once_with('9999999999')
 
 
 def test_calendar_iter_events():
