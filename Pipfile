@@ -1,28 +1,22 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
-
-facebook-sdk = "*"
-google = "*"
-google-api-python-client = "*"
-python-dateutil = "*"
-python-wordpress-xmlrpc = "*"
-
+facebook-sdk = ">= 2.0.0"
+google = ">= 1.9.3"
+google-api-python-client = ">= 1.6.4"
+python-dateutil = ">= 2.6.1"
+python-wordpress-xmlrpc = ">= 2.3.0"
+pytz = ">= 2018.3"
 
 [dev-packages]
-
-ipython = "*"
 ipdb = "*"
+ipython = "*"
+mock = "*"
 pytest = "*"
 pytest-cov = "*"
-mock = "*"
-
 
 [requires]
-
 python_version = "3.6"
