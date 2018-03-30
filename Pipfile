@@ -10,6 +10,7 @@ google-api-python-client = ">= 1.6.4"
 python-dateutil = ">= 2.6.1"
 python-wordpress-xmlrpc = ">= 2.3.0"
 pytz = ">= 2018.3"
+slackclient = ">= 1.2"
 
 [dev-packages]
 ipdb = "*"

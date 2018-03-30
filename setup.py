@@ -1,23 +1,24 @@
-import textwrap
 from setuptools import setup
 
-GOOGLE = ['google >= 1.9.3, < 2', 'google-api-python-client >= 1.6.4, < 2']
-WORDPRESS = ['python-wordpress-xmlrpc >= 2.3.0, < 2.4']
-ALL = GOOGLE + WORDPRESS
-
+GOOGLE = ['google >= 1.9.3',
+          'google-api-python-client >= 1.6.4']
+SLACK = ['slackclient >= 1.2']
+WORDPRESS = ['python-wordpress-xmlrpc >= 2.3.0']
+ALL = GOOGLE + SLACK + WORDPRESS
 
 setup(name='fest',
-      version='1.0.0',
+      version='1.1.0',
       author='amancevice',
       author_email='smallweirdnum@gmail.com',
       packages=['fest'],
       url='https://github.com/amancevice/fest',
       description='Sync Facebook events to other services',
-      long_description=textwrap.dedent(
-          '''See GitHub_ for documentation.
-          .. _GitHub: https://github.com/amancevice/fest'''),
+      long_description='See GitHub_ for documentation.'
+                       '.. _GitHub: https://github.com/amancevice/fest',
       install_requires=['facebook-sdk >= 2.0.0',
-                        'python-dateutil >= 2.6.1'],
+                        'python-dateutil >= 2.6.1',
+                        'pytz >= 2018.3'],
       extras_require={'all': ALL,
                       'google': GOOGLE,
+                      'slack': SLACK,
                       'wordpress': WORDPRESS})
