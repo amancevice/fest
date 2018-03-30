@@ -1,6 +1,9 @@
+from datetime import datetime
+
 import googleapiclient
 import fest.cloud
 import fest.graph
+import pytz
 import mock
 
 
@@ -237,6 +240,17 @@ def test_cloud_get_event_by_source_id_none(mock_iter):
     assert ret is None
 
 
+@mock.patch('fest.cloud.CalendarAPI.iter_events')
+@mock.patch('pytz.UTC.localize')
+def test_cloud_get_today(mock_astz, mock_iter):
+    mock_astz.return_value = datetime(2018, 3, 30, 12, tzinfo=pytz.utc)
+    cloud = MockCalendarAPI()
+    cloud.get_today('cal_id', 'America/Los_Angeles')
+    mock_iter.assert_called_once_with('cal_id',
+                                      timeMax='2018-03-31T00:00:00-07:00',
+                                      timeMin='2018-03-30T00:00:00-07:00')
+
+
 def test_cloud_patch_event():
     event = mock.MagicMock()
     cloud = MockCalendarAPI()
@@ -316,6 +330,14 @@ def test_calendar_get_event_by_source_id():
     gcal.get_event_by_source_id('1234567890')
     gcal.service.get_event_by_source_id.assert_called_once_with(
         'cal_id', '1234567890')
+
+
+def test_calendar_get_today():
+    gcal = fest.cloud.GoogleCalendar(
+        mock.MagicMock(), id='cal_id', timeZone='America/Los_Angeles')
+    gcal.get_today()
+    gcal.service.get_today.assert_called_once_with(
+        'cal_id', 'America/Los_Angeles')
 
 
 def test_calendar_iter_events():

@@ -2,8 +2,11 @@
 Google Cloud tools.
 """
 import os
+from datetime import datetime
+from datetime import timedelta
 
 import httplib2
+import pytz
 from apiclient import discovery
 from oauth2client import service_account
 from fest import graph
@@ -193,6 +196,23 @@ class CalendarAPI(bases.BaseAPI):
             if google_event.source_id == source_id:
                 return google_event
         return None
+
+    def get_today(self, calendar_id, tz):
+        """ Get today's events in calendar.
+
+            :param str calendar_id: Google Calendar ID
+            :param str tz: Time zone name
+            :returns list[object]: List of GoogleEvent
+        """
+        # pylint: disable=invalid-name
+        tz = pytz.timezone(tz)
+        utc = pytz.utc.localize(datetime.utcnow())
+        now = utc.astimezone(tz)
+        time_min = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        time_max = time_min + timedelta(days=1)
+        return list(self.iter_events(calendar_id,
+                                     timeMin=time_min.isoformat(),
+                                     timeMax=time_max.isoformat()))
 
     def iter_calendars(self, **kwargs):
         """ Iterate over Google Calendars. """
@@ -399,9 +419,16 @@ class GoogleCalendar(bases.BaseObject):
         """
         return self.service.get_event_by_source_id(self['id'], source_id)
 
-    def iter_events(self):
+    def get_today(self):
+        """ Get today's events in calendar.
+
+            :returns list[object]: List of GoogleEvent
+        """
+        return self.service.get_today(self['id'], self['timeZone'])
+
+    def iter_events(self, **kwargs):
         """ Iterate over all Google Calendar events. """
-        return self.service.iter_events(self['id'])
+        return self.service.iter_events(self['id'], **kwargs)
 
     def patch_event(self, event_id, source_event):
         """ Patch event in calendar.
