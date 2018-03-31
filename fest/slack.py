@@ -52,7 +52,10 @@ class SlackAPI(bases.BaseAPI):
                 channel_id,
                 json.dumps(message))
         self.logger.info('POST %s %s', channel_id, json.dumps(message))
-        return self.service.api_call('chat.postMessage', channel_id, **message)
+        return self.service.api_call(
+            'chat.postMessage',
+            channel=channel_id,
+            **message)
 
 
 class SlackChannel(bases.BaseObject):
