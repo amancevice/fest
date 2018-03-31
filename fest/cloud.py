@@ -29,7 +29,7 @@ class CalendarAPI(bases.BaseAPI):
     """
     # pylint: disable=too-many-public-methods
     @staticmethod
-    def get_calendar_url(calendar_id):
+    def get_calendar_google_url(calendar_id):
         """ Get calendar URL.
 
             :param str calendar_id: Google Calendar ID
@@ -38,6 +38,16 @@ class CalendarAPI(bases.BaseAPI):
         encoded_id = base64.standard_b64encode(utf8_encoded).decode('utf-8')
         root_url = 'https://calendar.google.com/calendar/r?cid='
         return '{}{}'.format(root_url, encoded_id.strip('='))
+
+    @staticmethod
+    def get_calendar_ical_url(calendar_id):
+        """ Get calendar URL.
+
+            :param str calendar_id: Google Calendar ID
+        """
+        encoded_id = calendar_id.replace('@', '%40')
+        root_url = 'webcal://calendar.google.com/calendar/ical/'
+        return '{}{}/public/basic.ics'.format(root_url, encoded_id)
 
     @classmethod
     def from_env(cls):
@@ -373,9 +383,14 @@ class GoogleCalendar(bases.BaseObject):
         :param object service: GoogleCloud instance
     """
     @property
-    def url(self):
+    def google_url(self):
         """ Get URL of Google Calendar. """
-        return self.service.get_calendar_url(self['id'])
+        return self.service.get_calendar_google_url(self['id'])
+
+    @property
+    def ical_url(self):
+        """ Get URL of Google Calendar. """
+        return self.service.get_calendar_ical_url(self['id'])
 
     @staticmethod
     def from_facebook(facebook_page, tz, service=None):

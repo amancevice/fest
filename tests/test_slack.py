@@ -13,56 +13,34 @@ def test_slack_api_from_credentials():
     assert slack.service.token == 'TOKEN'
 
 
+def test_slack_api_get_channel():
+    slack = fest.slack.SlackAPI(mock.MagicMock())
+    ret = slack.get_channel('CHANNEL')
+    exp = fest.slack.SlackChannel(slack, id='CHANNEL')
+    assert ret == exp
+
+
 def test_slack_api_post_message():
     slack = fest.slack.SlackAPI(mock.MagicMock())
-    slack.post_message({'text': 'TEXT'}, 'CHANNEL')
+    slack.post_message('CHANNEL', {'text': 'TEXT'})
     slack.service.api_call.assert_called_once_with(
-        'chat.postMessage', channel='CHANNEL', text='TEXT')
+        'chat.postMessage', 'CHANNEL', text='TEXT')
 
 
-def test_slack_message_from_google_no_events():
-    gcal = mock.MagicMock()
-    gcal.url = 'https://example.com'
-    message = fest.slack.SlackMessage.from_google(gcal)
-    kwargs = {
-        "attachments": [
-            {
-                "actions": [
-                    {
-                        "name": "google",
-                        "text": "Google",
-                        "type": "button"
-                    },
-                    {
-                        "name": "icalendar",
-                        "text": "iCalendar",
-                        "type": "button"
-                    },
-                    {
-                        "name": "not_sure",
-                        "text": "I'm not sure",
-                        "type": "button"
-                    }
-                ],
-                "fallback": "Unable to display the subscription links",
-                "text": u"Choose \u2039\u2039 Google \u203a\u203a if you use "
-                        u"already have a Google Calendar\nChoose \u2039\u2039 "
-                        u"iCalendar \u203a\u203a if you use something else",
-                "title": "Subscribe to this <https://example.com|Calendar>!"
-            }
-        ],
-        "text": u"There are no events today\n_Subscribing via the "
-                u"\u2039\u2039 Google \u203a\u203a button will only work "
-                u"from a computer!_"
-    }
-    assert message == fest.slack.SlackMessage(mock.MagicMock(), **kwargs)
+def test_slack_api_post_message_dryrun():
+    slack = fest.slack.SlackAPI(mock.MagicMock())
+    slack.post_message('CHANNEL', {'text': 'TEXT'}, dryrun=True)
+    slack.service.api_call.assert_not_called()
 
 
-def test_slack_message_from_google_one_event():
-    gcal = mock.MagicMock()
-    gcal.url = 'https://example.com'
-    gcal.get_today.return_value = [
-        {
+@mock.patch('fest.cloud.GoogleCalendar.get_today')
+def test_slack_channel_post_today(mock_today):
+    channel = fest.slack.SlackChannel(mock.MagicMock(), id='CHANNEL')
+    gcal = fest.cloud.GoogleCalendar(mock.MagicMock(), id='cal_id')
+    gcal.service.get_calendar_google_url.return_value = 'https://example.com'
+    gcal.service.get_calendar_ical_url.return_value = 'https://example.com'
+    mock_today.return_value = [
+        fest.cloud.GoogleEvent(gcal.service, **{
             "summary": "Event Title",
             "htmlLink": "https://www.google.com/calendar/event?eid=eid",
             "location": "Somewhere",
@@ -72,245 +50,164 @@ def test_slack_message_from_google_one_event():
             "end": {
                 "dateTime": "2018-03-30T21:00:00-07:00",
             },
-        }
+        })
     ]
-    message = fest.slack.SlackMessage.from_google(gcal)
-    kwargs = {
-        "attachments": [
+    channel.post_today(gcal, help_url='https://example.com', color='#b71c1c')
+    channel.service.post_message.assert_called_once_with(
+        'CHANNEL',
+        {
+            'text': 'There is *1* event today',
+            'attachments': [
+                {
+                    'title': '<https://www.google.com/calendar/event?eid=eid|'
+                             'Event Title>',
+                    'text': 'Mar 30 from 7:00 PM to 9:00 PM at '
+                            '<https://maps.google.com/maps?q=Somewhere|'
+                            'Somewhere>',
+                    'fallback': 'Unable to display event',
+                    'color': '#b71c1c'
+                }, {
+                    'title': 'Subscribe to this Calendar!',
+                    'text': u'Choose _\u2039\u2039 Google \u203a\u203a_ if '
+                            u'you already use Google Calendar\nChoose _'
+                            u'\u2039\u2039 iCalendar \u203a\u203a_ if you use '
+                            u'something else\n_Subscribing via the \u2039'
+                            u'\u2039 Google \u203a\u203a button will only '
+                            u'work from a computer!_',
+                    'mrkdwn_in': ['text'],
+                    'fallback': 'Unable to display the subscription links',
+                    'actions': [
+                        {
+                            'type': 'button',
+                            'name': 'google',
+                            'text': 'Google',
+                            'url': 'https://example.com'
+                        }, {
+                            'type': 'button',
+                            'name': 'icalendar',
+                            'text': 'iCalendar',
+                            'url': 'https://example.com'
+                        }, {
+                            'type': 'button',
+                            'name': 'not_sure',
+                            'text': "I'm not sure",
+                            'url': 'https://example.com'
+                        }
+                    ],
+                    'color': '#b71c1c'
+                }
+            ]
+        }, dryrun=False)
+
+
+def test_get_todays_message_no_events():
+    channel = fest.slack.SlackChannel(mock.MagicMock(), id='CHANNEL')
+    ret = channel.get_todays_message([])
+    exp = 'There are no events today'
+    assert ret == exp
+
+
+def test_get_todays_message_one_event():
+    channel = fest.slack.SlackChannel(mock.MagicMock(), id='CHANNEL')
+    ret = channel.get_todays_message([1])
+    exp = 'There is *1* event today'
+    assert ret == exp
+
+
+def test_get_todays_message_many_events():
+    channel = fest.slack.SlackChannel(mock.MagicMock(), id='CHANNEL')
+    ret = channel.get_todays_message([1, 2])
+    exp = 'There are *2* events today'
+    assert ret == exp
+
+
+def test_get_attachments():
+    events = [mock.MagicMock()]
+    channel = fest.slack.SlackChannel(mock.MagicMock(), id='CHANNEL')
+    channel.get_attachments(events, color='#b71c1c')
+    events[0].to_slack.assert_called_once_with(color='#b71c1c')
+
+
+def test_get_subscription():
+    google_url = 'https://example.com'
+    ical_url = 'https://example.com'
+    help_url = 'https://example.com'
+    channel = fest.slack.SlackChannel(mock.MagicMock(), id='CHANNEL')
+    ret = channel.get_subscription(
+        google_url, ical_url, help_url, color='#b71c1c')
+    exp = {
+        'title': 'Subscribe to this Calendar!',
+        'text': u'Choose _\u2039\u2039 Google \u203a\u203a_ if you already '
+                u'use Google Calendar\nChoose _\u2039\u2039 iCalendar \u203a'
+                u'\u203a_ if you use something else\n_Subscribing via the '
+                u'\u2039\u2039 Google \u203a\u203a button will only work from '
+                u'a computer!_',
+        'mrkdwn_in': ['text'],
+        'fallback': 'Unable to display the subscription links',
+        'actions': [
             {
-                "fallback": "Unable to display event",
-                "text": "Mar 30 from 7:00 PM to 9:00 PM at "
-                        "<https://maps.google.com/maps?q=Somewhere|Somewhere>",
-                "title": "<https://www.google.com/calendar/event?eid=eid|"
-                         "Event Title>"
-            },
-            {
-                "actions": [
-                    {
-                        "name": "google",
-                        "text": "Google",
-                        "type": "button"
-                    },
-                    {
-                        "name": "icalendar",
-                        "text": "iCalendar",
-                        "type": "button"
-                    },
-                    {
-                        "name": "not_sure",
-                        "text": "I'm not sure",
-                        "type": "button"
-                    }
-                ],
-                "fallback": "Unable to display the subscription links",
-                "text": u"Choose \u2039\u2039 Google \u203a\u203a if you use "
-                        u"already have a Google Calendar\nChoose \u2039\u2039 "
-                        u"iCalendar \u203a\u203a if you use something else",
-                "title": "Subscribe to this <https://example.com|Calendar>!"
+                'type': 'button',
+                'name': 'google',
+                'text': 'Google',
+                'url': 'https://example.com'
+            }, {
+                'type': 'button',
+                'name': 'icalendar',
+                'text': 'iCalendar',
+                'url': 'https://example.com'
+            }, {
+                'type': 'button',
+                'name': 'not_sure',
+                'text': "I'm not sure",
+                'url': 'https://example.com'
             }
         ],
-        "text": u"There is *1* event today\n_Subscribing via the "
-                u"\u2039\u2039 Google \u203a\u203a button will only work "
-                u"from a computer!_"
+        'color': '#b71c1c'
     }
-    assert message == fest.slack.SlackMessage(mock.MagicMock(), **kwargs)
-
-
-def test_slack_message_from_google_one_event_multiday():
-    gcal = mock.MagicMock()
-    gcal.url = 'https://example.com'
-    gcal.get_today.return_value = [
-        {
-            "summary": "Event Title",
-            "htmlLink": "https://www.google.com/calendar/event?eid=eid",
-            "location": "Somewhere",
-            "start": {
-                "dateTime": "2018-03-30T19:00:00-07:00",
-            },
-            "end": {
-                "dateTime": "2018-03-31T21:00:00-07:00",
-            },
-        }
-    ]
-    message = fest.slack.SlackMessage.from_google(gcal)
-    kwargs = {
-        "attachments": [
-            {
-                "fallback": "Unable to display event",
-                "text": "Mar 30 through Mar 31 at "
-                        "<https://maps.google.com/maps?q=Somewhere|Somewhere>",
-                "title": "<https://www.google.com/calendar/event?eid=eid|"
-                         "Event Title>"
-            },
-            {
-                "actions": [
-                    {
-                        "name": "google",
-                        "text": "Google",
-                        "type": "button"
-                    },
-                    {
-                        "name": "icalendar",
-                        "text": "iCalendar",
-                        "type": "button"
-                    },
-                    {
-                        "name": "not_sure",
-                        "text": "I'm not sure",
-                        "type": "button"
-                    }
-                ],
-                "fallback": "Unable to display the subscription links",
-                "text": u"Choose \u2039\u2039 Google \u203a\u203a if you use "
-                        u"already have a Google Calendar\nChoose \u2039\u2039 "
-                        u"iCalendar \u203a\u203a if you use something else",
-                "title": "Subscribe to this <https://example.com|Calendar>!"
-            }
-        ],
-        "text": u"There is *1* event today\n_Subscribing via the "
-                u"\u2039\u2039 Google \u203a\u203a button will only work "
-                u"from a computer!_"
-    }
-    assert message == fest.slack.SlackMessage(mock.MagicMock(), **kwargs)
-
-
-def test_slack_message_from_google_two_events():
-    gcal = mock.MagicMock()
-    gcal.url = 'https://example.com'
-    gcal.get_today.return_value = [
-        {
-            "summary": "Event Title",
-            "htmlLink": "https://www.google.com/calendar/event?eid=eid",
-            "location": "Somewhere",
-            "start": {
-                "dateTime": "2018-03-30T19:00:00-07:00",
-            },
-            "end": {
-                "dateTime": "2018-03-30T21:00:00-07:00",
-            },
-        },
-        {
-            "summary": "Event Title",
-            "htmlLink": "https://www.google.com/calendar/event?eid=eid",
-            "location": "Somewhere",
-            "start": {
-                "dateTime": "2018-03-30T19:00:00-07:00",
-            },
-            "end": {
-                "dateTime": "2018-03-30T21:00:00-07:00",
-            },
-        }
-    ]
-    message = fest.slack.SlackMessage.from_google(gcal)
-    kwargs = {
-        "attachments": [
-            {
-                "fallback": "Unable to display event",
-                "text": "Mar 30 from 7:00 PM to 9:00 PM at "
-                        "<https://maps.google.com/maps?q=Somewhere|Somewhere>",
-                "title": "<https://www.google.com/calendar/event?eid=eid|"
-                         "Event Title>"
-            },
-            {
-                "fallback": "Unable to display event",
-                "text": "Mar 30 from 7:00 PM to 9:00 PM at "
-                        "<https://maps.google.com/maps?q=Somewhere|Somewhere>",
-                "title": "<https://www.google.com/calendar/event?eid=eid|"
-                         "Event Title>"
-            },
-            {
-                "actions": [
-                    {
-                        "name": "google",
-                        "text": "Google",
-                        "type": "button"
-                    },
-                    {
-                        "name": "icalendar",
-                        "text": "iCalendar",
-                        "type": "button"
-                    },
-                    {
-                        "name": "not_sure",
-                        "text": "I'm not sure",
-                        "type": "button"
-                    }
-                ],
-                "fallback": "Unable to display the subscription links",
-                "text": u"Choose \u2039\u2039 Google \u203a\u203a if you use "
-                        u"already have a Google Calendar\nChoose \u2039\u2039 "
-                        u"iCalendar \u203a\u203a if you use something else",
-                "title": "Subscribe to this <https://example.com|Calendar>!"
-            }
-        ],
-        "text": u"There are *2* events today\n_Subscribing via the "
-                u"\u2039\u2039 Google \u203a\u203a button will only work "
-                u"from a computer!_"
-    }
-    assert message == fest.slack.SlackMessage(mock.MagicMock(), **kwargs)
+    assert ret == exp
 
 
 def test_slack_attachment_from_google():
-    pass
-
-
-def test_slack_subattachment_from_google():
-    gcal = mock.MagicMock()
-    gcal.url = 'https://example.com'
-    message = fest.slack.SlackSubAttachment.from_google(gcal)
-    kwargs = {
-        "actions": [
-            {
-                "name": "google",
-                "text": "Google",
-                "type": "button"
-            },
-            {
-                "name": "icalendar",
-                "text": "iCalendar",
-                "type": "button"
-            },
-            {
-                "name": "not_sure",
-                "text": "I'm not sure",
-                "type": "button"
-            }
-        ],
-        "fallback": "Unable to display the subscription links",
-        "text": u"Choose \u2039\u2039 Google \u203a\u203a if you use "
-                u"already have a Google Calendar\nChoose \u2039\u2039 "
-                u"iCalendar \u203a\u203a if you use something else",
-        "title": "Subscribe to this <https://example.com|Calendar>!"
+    event = {
+        'start': {
+            'dateTime': '2017-03-31T12:00:00+00:00'
+        },
+        'end': {
+            'dateTime': '2017-03-31T13:00:00+00:00'
+        },
+        'location': 'Someplace',
+        'summary': 'This is an event',
+        'htmlLink': 'https://example.com'
     }
-    assert message == fest.slack.SlackSubAttachment(mock.MagicMock(), **kwargs)
-
-
-def test_slack_subattachment_from_google_no_url():
-    gcal = mock.MagicMock()
-    gcal.url = None
-    message = fest.slack.SlackSubAttachment.from_google(gcal)
-    kwargs = {
-        "actions": [
-            {
-                "name": "google",
-                "text": "Google",
-                "type": "button"
-            },
-            {
-                "name": "icalendar",
-                "text": "iCalendar",
-                "type": "button"
-            },
-            {
-                "name": "not_sure",
-                "text": "I'm not sure",
-                "type": "button"
-            }
-        ],
-        "fallback": "Unable to display the subscription links",
-        "text": u"Choose \u2039\u2039 Google \u203a\u203a if you use "
-                u"already have a Google Calendar\nChoose \u2039\u2039 "
-                u"iCalendar \u203a\u203a if you use something else",
-        "title": "Subscribe to this Calendar!"
+    ret = fest.slack.SlackAttachment.from_google(event, color='#b71c1c')
+    exp = {
+        'color': '#b71c1c',
+        'fallback': 'Unable to display event',
+        'title': '<https://example.com|This is an event>',
+        'text': 'Mar 31 from 12:00 PM to 1:00 PM at '
+                '<https://maps.google.com/maps?q=Someplace|Someplace>'
     }
-    assert message == fest.slack.SlackSubAttachment(mock.MagicMock(), **kwargs)
+    assert ret == exp
+
+
+def test_slack_attachment_from_google_multiday():
+    event = {
+        'start': {
+            'dateTime': '2017-03-31T12:00:00+00:00'
+        },
+        'end': {
+            'dateTime': '2017-04-01T13:00:00+00:00'
+        },
+        'location': 'Someplace',
+        'summary': 'This is an event',
+        'htmlLink': 'https://example.com'
+    }
+    ret = fest.slack.SlackAttachment.from_google(event, color='#b71c1c')
+    exp = {
+        'color': '#b71c1c',
+        'fallback': 'Unable to display event',
+        'title': '<https://example.com|This is an event>',
+        'text': 'Mar 31 through Apr 1 at '
+                '<https://maps.google.com/maps?q=Someplace|Someplace>'
+    }
+    assert ret == exp
