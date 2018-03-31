@@ -24,7 +24,7 @@ def test_slack_api_post_message():
     slack = fest.slack.SlackAPI(mock.MagicMock())
     slack.post_message('CHANNEL', {'text': 'TEXT'})
     slack.service.api_call.assert_called_once_with(
-        'chat.postMessage', 'CHANNEL', text='TEXT')
+        'chat.postMessage', channel='CHANNEL', text='TEXT')
 
 
 def test_slack_api_post_message_dryrun():
