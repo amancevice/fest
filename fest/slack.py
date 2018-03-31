@@ -5,11 +5,11 @@ import json
 import os
 
 import dateutil.parser
-import slackclient
+import requests
 from fest import bases
 from fest import cloud
 
-SLACK_TOKEN = os.getenv('SLACK_API_TOKEN')
+SLACK_WEBHOOK = os.getenv('SLACK_WEBHOOK')
 
 
 class SlackAPI(bases.BaseAPI):
@@ -17,49 +17,6 @@ class SlackAPI(bases.BaseAPI):
 
         :param object service: SlackClient instance
     """
-    @classmethod
-    def from_env(cls):
-        """ Create CalendarAPI object from ENV variables. """
-        return cls.from_credentials()
-
-    @classmethod
-    def from_credentials(cls, token=None):
-        """ Create SlackAPI object from credentials
-
-            :param str token: Slack API token
-        """
-        service = slackclient.SlackClient(token or SLACK_TOKEN)
-        return cls(service)
-
-    def get_channel(self, channel_id):
-        """ Get SlackChannel object.
-
-            :param str channel_id: Slack channel ID
-            :returns object: SlackChannel object
-        """
-        return SlackChannel(self, id=channel_id)
-
-    def post_message(self, channel_id, message, dryrun=False):
-        """ Post message to Slack channel.
-
-            :param str channel: Slack channel ID
-            :param dict message: message JSON to post.
-            :param bool dryrun: Do not send POST
-        """
-        if dryrun:
-            return self.logger.debug(
-                'DRYRUN POST %s %s',
-                channel_id,
-                json.dumps(message))
-        self.logger.info('POST %s %s', channel_id, json.dumps(message))
-        return self.service.api_call(
-            'chat.postMessage',
-            channel=channel_id,
-            **message)
-
-
-class SlackChannel(bases.BaseObject):
-    """ Slack channel obejct. """
     @staticmethod
     def get_todays_message(google_events):
         """ Get message for today's events.
@@ -131,6 +88,32 @@ class SlackChannel(bases.BaseObject):
             **kwargs)
         return attachment
 
+    @classmethod
+    def from_env(cls):
+        """ Create CalendarAPI object from ENV variables. """
+        return cls.from_credentials()
+
+    @classmethod
+    def from_credentials(cls, webhook=None):
+        """ Create SlackAPI object from credentials
+
+            :param str webhook: Slack Webhook URL
+        """
+        service = webhook or SLACK_WEBHOOK
+        return cls(service)
+
+    def post_message(self, message, dryrun=False):
+        """ Post message to Slack channel.
+
+            :param dict message: message JSON to post.
+            :param bool dryrun: Do not send POST
+        """
+        if dryrun:
+            return self.logger.debug('DRYRUN POST %s', json.dumps(message))
+        self.logger.info('POST %s', json.dumps(message))
+        response = requests.post(self.service, json=message)
+        return response
+
     def post_today(self, google_calendar, help_url=None, dryrun=False,
                    **kwargs):
         """ Post today's events to channel.
@@ -148,7 +131,7 @@ class SlackChannel(bases.BaseObject):
             help_url=help_url,
             **kwargs)
         message = {'text': text, 'attachments': attachments + [subscription]}
-        return self.service.post_message(self['id'], message, dryrun=dryrun)
+        return self.post_message(message, dryrun=dryrun)
 
 
 class SlackAttachment(bases.BaseObject):

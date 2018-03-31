@@ -9,33 +9,29 @@ def test_slack_api_from_env(mock_creds):
 
 
 def test_slack_api_from_credentials():
-    slack = fest.slack.SlackAPI.from_credentials('TOKEN')
-    assert slack.service.token == 'TOKEN'
+    slack = fest.slack.SlackAPI.from_credentials('https://webhook.com')
+    assert slack.service == 'https://webhook.com'
 
 
-def test_slack_api_get_channel():
-    slack = fest.slack.SlackAPI(mock.MagicMock())
-    ret = slack.get_channel('CHANNEL')
-    exp = fest.slack.SlackChannel(slack, id='CHANNEL')
-    assert ret == exp
+@mock.patch('requests.post')
+def test_slack_api_post_message(mock_post):
+    slack = fest.slack.SlackAPI('https://webhook.com')
+    slack.post_message({'text': 'TEXT'}, dryrun=False)
+    mock_post.assert_called_once_with(
+        'https://webhook.com', json={'text': 'TEXT'})
 
 
-def test_slack_api_post_message():
-    slack = fest.slack.SlackAPI(mock.MagicMock())
-    slack.post_message('CHANNEL', {'text': 'TEXT'})
-    slack.service.api_call.assert_called_once_with(
-        'chat.postMessage', channel='CHANNEL', text='TEXT')
-
-
-def test_slack_api_post_message_dryrun():
-    slack = fest.slack.SlackAPI(mock.MagicMock())
-    slack.post_message('CHANNEL', {'text': 'TEXT'}, dryrun=True)
-    slack.service.api_call.assert_not_called()
+@mock.patch('requests.post')
+def test_slack_api_post_message_dryrun(mock_post):
+    slack = fest.slack.SlackAPI('https://webhook.com')
+    slack.post_message({'text': 'TEXT'}, dryrun=True)
+    mock_post.assert_not_called()
 
 
 @mock.patch('fest.cloud.GoogleCalendar.get_today')
-def test_slack_channel_post_today(mock_today):
-    channel = fest.slack.SlackChannel(mock.MagicMock(), id='CHANNEL')
+@mock.patch('requests.post')
+def test_slack_api_post_today(mock_post, mock_today):
+    slack = fest.slack.SlackAPI('https://webhook.com')
     gcal = fest.cloud.GoogleCalendar(mock.MagicMock(), id='cal_id')
     gcal.service.get_calendar_google_url.return_value = 'https://example.com'
     gcal.service.get_calendar_ical_url.return_value = 'https://example.com'
@@ -52,10 +48,10 @@ def test_slack_channel_post_today(mock_today):
             },
         })
     ]
-    channel.post_today(gcal, help_url='https://example.com', color='#b71c1c')
-    channel.service.post_message.assert_called_once_with(
-        'CHANNEL',
-        {
+    slack.post_today(gcal, help_url='https://example.com', color='#b71c1c')
+    mock_post.assert_called_once_with(
+        'https://webhook.com',
+        json={
             'text': 'There is *1* event today',
             'attachments': [
                 {
@@ -97,34 +93,30 @@ def test_slack_channel_post_today(mock_today):
                     'color': '#b71c1c'
                 }
             ]
-        }, dryrun=False)
+        })
 
 
-def test_get_todays_message_no_events():
-    channel = fest.slack.SlackChannel(mock.MagicMock(), id='CHANNEL')
-    ret = channel.get_todays_message([])
+def test_slack_api_get_todays_message_no_events():
+    ret = fest.slack.SlackAPI.get_todays_message([])
     exp = 'There are no events today'
     assert ret == exp
 
 
-def test_get_todays_message_one_event():
-    channel = fest.slack.SlackChannel(mock.MagicMock(), id='CHANNEL')
-    ret = channel.get_todays_message([1])
+def test_slack_api_get_todays_message_one_event():
+    ret = fest.slack.SlackAPI.get_todays_message([1])
     exp = 'There is *1* event today'
     assert ret == exp
 
 
-def test_get_todays_message_many_events():
-    channel = fest.slack.SlackChannel(mock.MagicMock(), id='CHANNEL')
-    ret = channel.get_todays_message([1, 2])
+def test_slack_api_get_todays_message_many_events():
+    ret = fest.slack.SlackAPI.get_todays_message([1, 2])
     exp = 'There are *2* events today'
     assert ret == exp
 
 
-def test_get_attachments():
+def test_slack_api_get_attachments():
     events = [mock.MagicMock()]
-    channel = fest.slack.SlackChannel(mock.MagicMock(), id='CHANNEL')
-    channel.get_attachments(events, color='#b71c1c')
+    fest.slack.SlackAPI.get_attachments(events, color='#b71c1c')
     events[0].to_slack.assert_called_once_with(color='#b71c1c')
 
 
@@ -132,8 +124,7 @@ def test_get_subscription():
     google_url = 'https://example.com'
     ical_url = 'https://example.com'
     help_url = 'https://example.com'
-    channel = fest.slack.SlackChannel(mock.MagicMock(), id='CHANNEL')
-    ret = channel.get_subscription(
+    ret = fest.slack.SlackAPI.get_subscription(
         google_url, ical_url, help_url, color='#b71c1c')
     exp = {
         'title': 'Subscribe to this Calendar!',
@@ -149,17 +140,17 @@ def test_get_subscription():
                 'type': 'button',
                 'name': 'google',
                 'text': 'Google',
-                'url': 'https://example.com'
+                'url': google_url
             }, {
                 'type': 'button',
                 'name': 'icalendar',
                 'text': 'iCalendar',
-                'url': 'https://example.com'
+                'url': ical_url
             }, {
                 'type': 'button',
                 'name': 'not_sure',
                 'text': "I'm not sure",
-                'url': 'https://example.com'
+                'url': help_url
             }
         ],
         'color': '#b71c1c'

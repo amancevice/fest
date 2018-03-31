@@ -2,12 +2,12 @@ from setuptools import setup
 
 GOOGLE = ['google >= 1.9.3',
           'google-api-python-client >= 1.6.4']
-SLACK = ['slackclient >= 1.2']
+SLACK = ['requests >= 2.18.4']
 WORDPRESS = ['python-wordpress-xmlrpc >= 2.3.0']
 ALL = GOOGLE + SLACK + WORDPRESS
 
 setup(name='fest',
-      version='1.2.1',
+      version='1.3.0',
       author='amancevice',
       author_email='smallweirdnum@gmail.com',
       packages=['fest'],
