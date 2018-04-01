@@ -7,7 +7,7 @@ WORDPRESS = ['python-wordpress-xmlrpc >= 2.3.0']
 ALL = GOOGLE + SLACK + WORDPRESS
 
 setup(name='fest',
-      version='1.3.0',
+      version='1.4.0',
       author='amancevice',
       author_email='smallweirdnum@gmail.com',
       packages=['fest'],

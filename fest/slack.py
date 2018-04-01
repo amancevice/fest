@@ -9,7 +9,7 @@ import requests
 from fest import bases
 from fest import cloud
 
-SLACK_WEBHOOK = os.getenv('SLACK_WEBHOOK')
+SLACK_WEBHOOK_URL = os.getenv('SLACK_WEBHOOK_URL')
 
 
 class SlackAPI(bases.BaseAPI):
@@ -94,12 +94,12 @@ class SlackAPI(bases.BaseAPI):
         return cls.from_credentials()
 
     @classmethod
-    def from_credentials(cls, webhook=None):
+    def from_credentials(cls, webhook_url=None):
         """ Create SlackAPI object from credentials
 
-            :param str webhook: Slack Webhook URL
+            :param str webhook_url: Slack Webhook URL
         """
-        service = webhook or SLACK_WEBHOOK
+        service = webhook_url or SLACK_WEBHOOK_URL
         return cls(service)
 
     def post_message(self, message, dryrun=False):
