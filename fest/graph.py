@@ -9,23 +9,7 @@ import facebook
 from dateutil import parser as dateparser
 from fest import bases
 
-FACEBOOK_APP_ID = os.getenv('FACEBOOK_APP_ID')
-FACEBOOK_APP_SECRET = os.getenv('FACEBOOK_APP_SECRET')
-FACEBOOK_PAGE_ID = os.getenv('FACEBOOK_PAGE_ID')
-
-
-def authenticated(func):
-    """ Authentication decorator. """
-    def wrapper(graph, *args, **kwargs):
-        """ Authentication wrapper. """
-        if graph.service.access_token is None:
-            graph.authenticate()
-        try:
-            return func(graph, *args, **kwargs)
-        except facebook.GraphAPIError:
-            graph.authenticate()
-            return func(graph, *args, **kwargs)
-    return wrapper
+FACEBOOK_PAGE_TOKEN = os.getenv('FACEBOOK_PAGE_TOKEN')
 
 
 class GraphAPI(bases.BaseAPI):
@@ -36,25 +20,16 @@ class GraphAPI(bases.BaseAPI):
     @classmethod
     def from_env(cls):
         """ Create GraphAPI object from ENV variables. """
-        return cls.from_credentials()
+        return cls.from_token()
 
     @classmethod
-    def from_credentials(cls, app_id=None, app_secret=None):
+    def from_token(cls, page_token=None):
         """ Create GraphAPI object from credentials
 
-            :param str app_id: Facebook app ID
-            :param str app_secret: Facebook app secret ID
+            :param str page_token: Facebook page token
         """
-        service = facebook.GraphAPI()
-        service.app_id = app_id or FACEBOOK_APP_ID
-        service.app_secret = app_secret or FACEBOOK_APP_SECRET
+        service = facebook.GraphAPI(page_token or FACEBOOK_PAGE_TOKEN)
         return cls(service)
-
-    def authenticate(self):
-        """ Get access token. """
-        self.service.access_token = \
-            self.service.get_app_access_token(
-                self.service.app_id, self.service.app_secret)
 
     def get_page(self, page_id, *fields):
         """ Get facebook page.
@@ -85,7 +60,6 @@ class GraphAPI(bases.BaseAPI):
         """
         return list(self.iter_events(page_id, **args))
 
-    @authenticated
     def get_object(self, facebook_id, **args):
         """ Get facebook object.
 

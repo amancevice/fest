@@ -7,15 +7,6 @@ import mock
 
 
 class MockGraphAPI(facebook.GraphAPI):
-    def __init__(self, *args, **kwargs):
-        super(MockGraphAPI, self).__init__(*args, **kwargs)
-        self.access_token = 'expired_token'
-        self.app_id = 'app_id'
-        self.app_secret = 'app_secret'
-
-    def get_app_access_token(self, *args, **kwargs):
-        return 'mock_access_token'
-
     def get_object(self, *args, **kwargs):
         if self.access_token == 'expired_token':
             raise facebook.GraphAPIError('TEST ERROR')
@@ -26,13 +17,6 @@ class MockGraphAPI(facebook.GraphAPI):
         elif kwargs.get('after') == 'GHIJKL67890':
             del resp['paging']
         return resp
-
-
-def test_authenticate():
-    graph = fest.graph.GraphAPI(MockGraphAPI())
-    assert graph.service.access_token == 'expired_token'
-    graph.get_object('1234567890')
-    assert graph.service.access_token == 'mock_access_token'
 
 
 def test_iter_paging():
@@ -52,48 +36,32 @@ def test_facebook_object_url():
     assert fbobj.url == 'https://www.facebook.com/1234567890'
 
 
-@mock.patch('fest.graph.GraphAPI.from_credentials')
+@mock.patch('fest.graph.GraphAPI.from_token')
 def test_graph_api_from_env(mock_creds):
     graph = fest.graph.GraphAPI.from_env()
     mock_creds.assert_called_once_with()
 
 
-def test_graph_api_init():
-    graph = fest.graph.GraphAPI.from_credentials('APP_ID', 'APP_SECRET')
-    assert graph.service.app_id == 'APP_ID'
-    assert graph.service.app_secret == 'APP_SECRET'
-
-
-@mock.patch('facebook.GraphAPI.get_app_access_token')
-def test_graph_api_authenticate(mock_tok):
-    graph = fest.graph.GraphAPI.from_credentials('APP_ID', 'APP_SECRET')
-    graph.authenticate()
-    mock_tok.assert_called_once_with('APP_ID', 'APP_SECRET')
-
-
-@mock.patch('facebook.GraphAPI.get_app_access_token')
 @mock.patch('facebook.GraphAPI.get_object')
-def test_graph_api_get_page(mock_obj, mock_tok):
-    graph = fest.graph.GraphAPI.from_credentials('APP_ID', 'APP_SECRET')
+def test_graph_api_get_page(mock_obj):
+    graph = fest.graph.GraphAPI.from_token('page_token')
     page = graph.get_page('page_id')
     mock_obj.assert_called_once_with(
         'page_id?fields=about,location,mission,name')
 
 
-@mock.patch('facebook.GraphAPI.get_app_access_token')
 @mock.patch('fest.graph.GraphAPI.iter_events')
-def test_graph_api_get_events(mock_iter, mock_tok):
+def test_graph_api_get_events(mock_iter):
     mock_iter.return_value = iter(['a', 'b', 'c', 'd'])
-    graph = fest.graph.GraphAPI.from_credentials('APP_ID', 'APP_SECRET')
+    graph = fest.graph.GraphAPI.from_token('page_token')
     events = graph.get_events('page_id')
     assert events == ['a', 'b', 'c', 'd']
 
 
-@mock.patch('facebook.GraphAPI.get_app_access_token')
 @mock.patch('facebook.GraphAPI.get_object')
-def test_graph_api_iter_events(mock_obj, mock_tok):
+def test_graph_api_iter_events(mock_obj):
     mock_obj.return_value = {'data': [{'a': 'b'}, {'c': 'd'}]}
-    graph = fest.graph.GraphAPI.from_credentials('APP_ID', 'APP_SECRET')
+    graph = fest.graph.GraphAPI.from_token('page_token')
     events = list(graph.iter_events(
         'page_id', event_state_filter=['canceled'], time_filter='upcoming'))
     assert events == [{'a': 'b'}, {'c': 'd'}]
@@ -101,7 +69,7 @@ def test_graph_api_iter_events(mock_obj, mock_tok):
 
 @mock.patch('fest.graph.GraphAPI.get_object')
 def test_graph_api_get_event(mock_obj):
-    graph = fest.graph.GraphAPI.from_credentials('APP_ID', 'APP_SECRET')
+    graph = fest.graph.GraphAPI.from_token('page_token')
     graph.get_event('1234567890')
     mock_obj.assert_called_once_with(
         '1234567890?fields='
@@ -153,7 +121,7 @@ def test_facebook_page_get_event(mock_graph):
 
 
 def test_facebook_event_init():
-    graph = fest.graph.GraphAPI.from_credentials('APP_ID', 'APP_SECRET')
+    graph = fest.graph.GraphAPI.from_token('page_token')
     obj = fest.graph.FacebookEvent(graph)
     assert obj.service == graph
 
@@ -224,9 +192,8 @@ def test_facebook_event_source_digest():
     assert event.source_digest == event.digest()
 
 
-@mock.patch('facebook.GraphAPI.get_app_access_token')
 @mock.patch('facebook.GraphAPI.get_object')
-def test_graph_api_iter_events_recurring(mock_obj, mock_tok):
+def test_graph_api_iter_events_recurring(mock_obj):
     mock_obj.return_value = {
         'data': [
             {'a': 'b'},
@@ -237,6 +204,6 @@ def test_graph_api_iter_events_recurring(mock_obj, mock_tok):
             ]}
         ]
     }
-    graph = fest.graph.GraphAPI.from_credentials('APP_ID', 'APP_SECRET')
+    graph = fest.graph.GraphAPI.from_token('page_token')
     events = list(graph.iter_events('page_id', time_filter='upcoming'))
     assert events == [{'a': 'b'}, {'c': 'd'}, {'e': 'f'}, {'g': 'h'}]
