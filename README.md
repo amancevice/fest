@@ -94,35 +94,6 @@ tribe = fest.tribe.TribeAPI.from_credentials(
 tribe.sync_events({'upcoming': upcoming})
 ```
 
-Push message to Slack:
-
-```python
-import fest.cloud
-import fest.slack
-
-# Connect to Google Cloud
-cloud = fest.cloud.CalendarAPI.from_credentials(
-    scopes=['https://www.googleapis.com/auth/calendar'],
-    service_type='service_account',
-    private_key_id='<private_key_id>',
-    private_key='<private_key>',
-    client_email='<client_email>',
-    client_id='<client_id>')
-
-# Get Google Calendar
-gcal = cloud.get_calendar('<google-calendar-id>')
-
-# Connect to Slack
-slack = fest.slack.SlackAPI.from_credentials(
-    token='<slack-token>')
-
-# Generate Slack message
-message = fest.slack.SlackMessage.from_google(gcal)
-
-# Push to Slack
-slack.push_message(message, '<channel-id>')
-```
-
 ## TODO
 
 * Full test coverage

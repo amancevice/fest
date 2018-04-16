@@ -2,9 +2,8 @@ from setuptools import setup
 
 GOOGLE = ['google >= 1.9.3',
           'google-api-python-client >= 1.6.4']
-SLACK = ['requests >= 2.18.4']
 WORDPRESS = ['python-wordpress-xmlrpc >= 2.3.0']
-ALL = GOOGLE + SLACK + WORDPRESS
+ALL = GOOGLE + WORDPRESS
 
 setup(name='fest',
       version='1.4.0',
@@ -20,5 +19,4 @@ setup(name='fest',
                         'pytz >= 2018.3'],
       extras_require={'all': ALL,
                       'google': GOOGLE,
-                      'slack': SLACK,
                       'wordpress': WORDPRESS})
