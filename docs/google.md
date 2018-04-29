@@ -37,7 +37,6 @@ export GOOGLE_PRIVATE_KEY_ID='<google-private-key-id'
 You may also wish to export the following variables:
 
 ```bash
-export GOOGLE_CALENDAR_ID='<google-calendar-id>'
 export GOOGLE_SCOPE='https://www.googleapis.com/auth/calendar'
 ```
 

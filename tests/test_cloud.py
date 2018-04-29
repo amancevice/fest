@@ -47,20 +47,18 @@ def test_calendar_api_from_env(mock_creds):
             '.from_json_keyfile_dict')
 def test_calendar_api_from_credentials(mock_keys, mock_build):
     scopes = ['https://www.googleapis.com/auth/calendar']
-    service_type = 'service_account'
     private_key_id = 'my_private_key_id'
     private_key = 'my_private_key'
     client_email = 'email@project.iam.gserviceaccount.com'
     client_id = '1234567890987654321'
     cloud = fest.cloud.CalendarAPI.from_credentials(
         scopes=scopes,
-        service_type=service_type,
         private_key_id=private_key_id,
         private_key=private_key,
         client_email=client_email,
         client_id=client_id)
     mock_keys.assert_called_once_with(
-        {'type': service_type,
+        {'type': 'service_account',
          'private_key_id': private_key_id,
          'private_key': private_key,
          'client_email': client_email,

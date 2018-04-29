@@ -1,12 +1,13 @@
 from setuptools import setup
 
 GOOGLE = ['google >= 1.9.3',
-          'google-api-python-client >= 1.6.4']
+          'google-api-python-client >= 1.6.4',
+          'google-service-http >= 0.0.1']
 WORDPRESS = ['python-wordpress-xmlrpc >= 2.3.0']
 ALL = GOOGLE + WORDPRESS
 
 setup(name='fest',
-      version='2.0.0',
+      version='2.1.0',
       author='amancevice',
       author_email='smallweirdnum@gmail.com',
       packages=['fest'],

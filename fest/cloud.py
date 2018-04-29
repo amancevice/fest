@@ -6,15 +6,12 @@ import os
 from datetime import datetime
 from datetime import timedelta
 
-import httplib2
+import google_service_http
 import pytz
 from apiclient import discovery
-from oauth2client import service_account
 from fest import graph
 from fest import bases
 
-GOOGLE_ACCOUNT_TYPE = os.getenv('GOOGLE_ACCOUNT_TYPE')
-GOOGLE_CALENDAR_ID = os.getenv('GOOGLE_CALENDAR_ID')
 GOOGLE_CLIENT_EMAIL = os.getenv('GOOGLE_CLIENT_EMAIL')
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_PRIVATE_KEY = os.getenv('GOOGLE_PRIVATE_KEY')
@@ -55,32 +52,28 @@ class CalendarAPI(bases.BaseAPI):
         return cls.from_credentials()
 
     @classmethod
-    def from_credentials(cls, scopes=None, service_type=None,
+    def from_credentials(cls, scopes=None,
                          private_key_id=None, private_key=None,
                          client_email=None, client_id=None):
         """ Create CalendarAPI object from credentials
 
             :param list[str] scopes: List of service scopes
-            :param str service_type: Google service type
             :param str private_key_id: Google private key ID
             :param str private_key: Google private key
             :param str client_email: Google client email
             :param str client_id: Google client ID
         """
         # pylint: disable=too-many-arguments
-        keyfile_dict = {
-            'type': service_type or GOOGLE_ACCOUNT_TYPE,
-            'private_key_id': private_key_id or GOOGLE_PRIVATE_KEY_ID,
-            'private_key': private_key or GOOGLE_PRIVATE_KEY,
-            'client_email': client_email or GOOGLE_CLIENT_EMAIL,
-            'client_id': client_id or GOOGLE_CLIENT_ID}
-        credentials = \
-            service_account.ServiceAccountCredentials.from_json_keyfile_dict(
-                keyfile_dict, scopes=scopes or [GOOGLE_SCOPE])
-        http = credentials.authorize(httplib2.Http())
-        service = discovery.build('calendar', 'v3',
-                                  http=http,
-                                  cache_discovery=False)
+        http = google_service_http.from_credentials(
+            scopes=scopes,
+            private_key_id=private_key_id or GOOGLE_PRIVATE_KEY_ID,
+            private_key=private_key or GOOGLE_PRIVATE_KEY,
+            client_email=client_email or GOOGLE_CLIENT_EMAIL,
+            client_id=client_id or GOOGLE_CLIENT_ID)
+        service = discovery.build(
+            'calendar', 'v3',
+            http=http,
+            cache_discovery=False)
         return cls(service)
 
     def add_event(self, calendar_id, source_event):
