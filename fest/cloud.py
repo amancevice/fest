@@ -191,13 +191,13 @@ class CalendarAPI(bases.BaseAPI):
         self.logger.info('GET %s/%s', calendar_id, event_id)
         return GoogleEvent(self, **request.execute())
 
-    def get_events(self, calendar_id):
+    def get_events(self, calendar_id, **kwargs):
         """ Get events in calendar.
 
             :param str calendar_id: Google Calendar ID
             :returns list[object]: List of GoogleEvent
         """
-        return list(self.iter_events(calendar_id))
+        return list(self.iter_events(calendar_id, **kwargs))
 
     def get_event_by_source_id(self, calendar_id, source_id):
         """ Get event by source ID.
@@ -420,12 +420,12 @@ class GoogleCalendar(bases.BaseObject):
         """ Clears the calendar of ALL events. """
         return self.service.clear_events(self['id'])
 
-    def get_events(self):
+    def get_events(self, **kwargs):
         """ Get events in calendar.
 
             :returns list[object]: List of GoogleEvent
         """
-        return list(self.iter_events())
+        return list(self.iter_events(**kwargs))
 
     def get_event(self, event_id):
         """ Get event by Google ID.
