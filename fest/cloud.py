@@ -65,7 +65,7 @@ class CalendarAPI(bases.BaseAPI):
         """
         # pylint: disable=too-many-arguments
         http = google_service_http.from_credentials(
-            scopes=scopes,
+            scopes=scopes or [GOOGLE_SCOPE],
             private_key_id=private_key_id or GOOGLE_PRIVATE_KEY_ID,
             private_key=private_key or GOOGLE_PRIVATE_KEY,
             client_email=client_email or GOOGLE_CLIENT_EMAIL,
