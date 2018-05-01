@@ -25,7 +25,6 @@ The `fest` tool makes use of environmental variables to manage access to Google 
 The following variables can be exported using values from `client_secret.json`
 
 ```bash
-export GOOGLE_ACCOUNT_TYPE='service_account'
 export GOOGLE_CLIENT_EMAIL='<google-service-client-email>'
 export GOOGLE_CLIENT_ID='<google-client-id>'
 export GOOGLE_PRIVATE_KEY='<google-private-key-multi-line-string'
