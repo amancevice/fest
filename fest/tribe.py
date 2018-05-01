@@ -60,9 +60,13 @@ class TribeAPI(bases.BaseAPI):
         tribe_endpoint = "{}/events/{}".format(self.service.tribe_endpoint,
                                                post.id)
         self.logger.info('POST %s', tribe_endpoint)
-        return requests.post(tribe_endpoint,
-                             headers=self.basic_auth(),
-                             json=tribe_event)
+        response = requests.post(tribe_endpoint,
+                                 headers=self.basic_auth(),
+                                 json=tribe_event)
+        if response.status_code == 200:
+            return response
+        raise ValueError(
+            "Tribe event returned {} status code".format(response.status_code))
 
     def basic_auth(self):
         """ Helper to get basic auth header. """
