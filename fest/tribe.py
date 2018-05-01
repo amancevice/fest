@@ -250,14 +250,6 @@ class TribeAPI(bases.BaseAPI):
 
 class WordPressPost(wp.WordPressPost):
     """ WordPressPost object. """
-    def __init__(self, xmlprc=None):
-        super(WordPressPost, self).__init__(xmlprc)
-        for env in os.environ:
-            if env.startswith('WP_CUSTOM_FIELD_'):
-                key = env.replace('WP_CUSTOM_FIELD_', '').lower()
-                value = os.getenv(env)
-                self.set_custom_field(key, value)
-
     @property
     def source_fields(self):
         """ Get custom facebook fields.
