@@ -245,7 +245,7 @@ class TribeAPI(bases.BaseAPI):
             if source_event.source_id in postmap:
                 post = postmap[source_event.source_id]
                 if dryrun is False:
-                    self.delete_event(post)
+                    self.delete_event(post.id)
                 else:
                     self.logger.info('DRYRUN DELETE %s :: %s',
                                      post.id,
