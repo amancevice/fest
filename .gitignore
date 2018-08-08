@@ -104,5 +104,5 @@ ENV/
 .pytest_cache/
 
 # secrets
-.secrets
+.env
 client_secret.json
