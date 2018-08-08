@@ -69,7 +69,8 @@ cloud = fest.cloud.CalendarAPI.from_credentials(
     private_key_id='<private_key_id>',
     private_key='<private_key>',
     client_email='<client_email>',
-    client_id='<client_id>')
+    client_id='<client_id>',
+    token_uri='https://accounts.google.com/o/oauth2/token')
 
 # Get Google Calendar
 gcal = cloud.get_calendar('<google-calendar-id>')

@@ -29,6 +29,7 @@ export GOOGLE_CLIENT_EMAIL='<google-service-client-email>'
 export GOOGLE_CLIENT_ID='<google-client-id>'
 export GOOGLE_PRIVATE_KEY='<google-private-key-multi-line-string'
 export GOOGLE_PRIVATE_KEY_ID='<google-private-key-id'
+export GOOGLE_TOKEN_URI='https://accounts.google.com/o/oauth2/token'
 ```
 
 ## Additional Settings

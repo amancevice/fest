@@ -9,7 +9,7 @@ import logging
 
 class BaseAPI(object):
     """ Base API. """
-    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods,useless-object-inheritance
     def __init__(self, service):
         self.service = service
         self.logger = logging.getLogger(self.__log__)

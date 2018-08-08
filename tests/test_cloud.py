@@ -43,30 +43,32 @@ def test_calendar_api_from_env(mock_creds):
 
 
 @mock.patch('apiclient.discovery.build')
-@mock.patch('oauth2client.service_account.ServiceAccountCredentials'
-            '.from_json_keyfile_dict')
+@mock.patch('google.oauth2.service_account.Credentials'
+            '.from_service_account_info')
 def test_calendar_api_from_credentials(mock_keys, mock_build):
     scopes = ['https://www.googleapis.com/auth/calendar']
     private_key_id = 'my_private_key_id'
     private_key = 'my_private_key'
     client_email = 'email@project.iam.gserviceaccount.com'
     client_id = '1234567890987654321'
+    token_uri = 'https://accounts.google.com/o/oauth2/token'
     cloud = fest.cloud.CalendarAPI.from_credentials(
         scopes=scopes,
         private_key_id=private_key_id,
         private_key=private_key,
         client_email=client_email,
-        client_id=client_id)
-    mock_keys.assert_called_once_with(
-        {'type': 'service_account',
-         'private_key_id': private_key_id,
-         'private_key': private_key,
-         'client_email': client_email,
-         'client_id': client_id},
-        scopes=scopes)
+        client_id=client_id,
+        token_uri=token_uri)
+    mock_keys.assert_called_once_with({
+        'private_key_id': private_key_id,
+        'private_key': private_key,
+        'client_email': client_email,
+        'client_id': client_id,
+        'token_uri': token_uri})
+    mock_keys.return_value.with_scopes.assert_called_once_with(scopes)
     mock_build.assert_called_once_with(
         'calendar', 'v3',
-        http=mock_keys.return_value.authorize.return_value,
+        credentials=mock_keys.return_value.with_scopes.return_value,
         cache_discovery=False)
 
 

@@ -1,8 +1,8 @@
 from setuptools import setup
 
 GOOGLE = ['google >= 1.9.3',
-          'google-api-python-client >= 1.6.4',
-          'google-service-http >= 0.0.1']
+          'google-auth >= 1.5.1',
+          'google-api-python-client >= 1.6.4']
 WORDPRESS = ['python-wordpress-xmlrpc >= 2.3.0']
 ALL = GOOGLE + WORDPRESS
 

@@ -6,9 +6,9 @@ import os
 from datetime import datetime
 from datetime import timedelta
 
-import google_service_http
 import pytz
 from apiclient import discovery
+from google.oauth2 import service_account
 from fest import graph
 from fest import bases
 
@@ -17,6 +17,7 @@ GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_PRIVATE_KEY = os.getenv('GOOGLE_PRIVATE_KEY')
 GOOGLE_PRIVATE_KEY_ID = os.getenv('GOOGLE_PRIVATE_KEY_ID')
 GOOGLE_SCOPE = os.getenv('GOOGLE_SCOPE')
+GOOGLE_TOKEN_URI = os.getenv('GOOGLE_TOKEN_URI')
 
 
 class CalendarAPI(bases.BaseAPI):
@@ -54,7 +55,7 @@ class CalendarAPI(bases.BaseAPI):
     @classmethod
     def from_credentials(cls, scopes=None,
                          private_key_id=None, private_key=None,
-                         client_email=None, client_id=None):
+                         client_email=None, client_id=None, token_uri=None):
         """ Create CalendarAPI object from credentials
 
             :param list[str] scopes: List of service scopes
@@ -62,17 +63,21 @@ class CalendarAPI(bases.BaseAPI):
             :param str private_key: Google private key
             :param str client_email: Google client email
             :param str client_id: Google client ID
+            :param str token_uri: Google auth token URI
         """
         # pylint: disable=too-many-arguments
-        http = google_service_http.from_credentials(
-            scopes=scopes or [GOOGLE_SCOPE],
-            private_key_id=private_key_id or GOOGLE_PRIVATE_KEY_ID,
-            private_key=private_key or GOOGLE_PRIVATE_KEY,
-            client_email=client_email or GOOGLE_CLIENT_EMAIL,
-            client_id=client_id or GOOGLE_CLIENT_ID)
+        keyfile_dict = {
+            'private_key_id': private_key_id or GOOGLE_PRIVATE_KEY_ID,
+            'private_key': private_key or GOOGLE_PRIVATE_KEY,
+            'client_email': client_email or GOOGLE_CLIENT_EMAIL,
+            'client_id': client_id or GOOGLE_CLIENT_ID,
+            'token_uri': token_uri or GOOGLE_TOKEN_URI}
+        credentials = service_account.Credentials\
+            .from_service_account_info(keyfile_dict)\
+            .with_scopes(scopes)
         service = discovery.build(
             'calendar', 'v3',
-            http=http,
+            credentials=credentials,
             cache_discovery=False)
         return cls(service)
 
