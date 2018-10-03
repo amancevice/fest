@@ -263,9 +263,8 @@ class CalendarAPI(bases.BaseAPI):
         for item in result.get('items', []):
             yield GoogleEvent(self, **item)
         try:
-            for item in self.iter_events(calendar_id,
-                                         pageToken=result['nextPageToken'],
-                                         **kwargs):
+            kwargs.update(pageToken=result['nextPageToken'])
+            for item in self.iter_events(calendar_id, **kwargs):
                 yield item  # pragma: no cover
         except KeyError:
             pass
