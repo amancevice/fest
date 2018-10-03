@@ -14,12 +14,8 @@ pytz = ">= 2018.3"
 requests = ">= 2.18.4"
 
 [dev-packages]
-click = "*"
 ipdb = "*"
 ipython = "*"
 mock = "*"
 pytest = "*"
 pytest-cov = "*"
-
-[requires]
-python_version = "3.6"
