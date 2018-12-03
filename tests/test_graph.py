@@ -50,6 +50,20 @@ def test_graph_api_get_page(mock_obj):
         'page_id?fields=about,location,mission,name')
 
 
+@mock.patch('facebook.GraphAPI.get_objects')
+def test_graph_api_get_objects(mock_objs):
+    graph = fest.graph.GraphAPI.from_token('page_token')
+    ids = list(map(str, range(0, 101)))
+    objs = {x: {'fizz': 'buzz'} for x in ids}
+    mock_objs.return_value = objs
+    graph.get_objects(ids)
+    mock_objs.assert_has_calls([
+        mock.call(ids[0:50]),
+        mock.call(ids[50:100]),
+        mock.call(ids[100:101]),
+    ])
+
+
 @mock.patch('fest.graph.GraphAPI.iter_events')
 def test_graph_api_get_events(mock_iter):
     mock_iter.return_value = iter(['a', 'b', 'c', 'd'])

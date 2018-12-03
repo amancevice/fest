@@ -69,6 +69,14 @@ class GraphAPI(bases.BaseAPI):
         self.logger.info('GET /%s %r', facebook_id, args)
         return self.service.get_object(facebook_id, **args)
 
+    def get_objects(self, facebook_ids, **args):
+        """ Get facebook objects.
+
+            :param str facebook_id: facebook object ID
+            :param dict args: Optional additional arguments
+        """
+        return list(self.iter_objects(facebook_ids, **args))
+
     def iter_events(self, page_id, **args):
         """ Iterate over page events.
 
@@ -97,6 +105,19 @@ class GraphAPI(bases.BaseAPI):
                     yield FacebookEvent(self, **item)
             except KeyError:
                 break
+
+    def iter_objects(self, facebook_ids, **args):
+        """ Get facebook objects.
+
+            :param str facebook_id: facebook object ID
+            :param dict args: Optional additional arguments
+        """
+        self.logger.info('GET /%s %r', facebook_ids, args)
+        chunks = list(range(0, len(facebook_ids), 50)) + [len(facebook_ids)]
+        for left, right in zip(chunks[:-1], chunks[1:]):
+            objs = self.service.get_objects(facebook_ids[left:right], **args)
+            for obj in objs.values():
+                yield obj
 
 
 class FacebookObject(bases.BaseObject):
