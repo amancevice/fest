@@ -222,6 +222,26 @@ def test_cloud_get_event():
          .execute.assert_called_once_with()
 
 
+@mock.patch('googleapiclient.http.HttpRequest')
+def test_cloud_iter_events(mock_http):
+    mock_http.side_effect = [
+        {
+            'items': [{'fizz': {'buzz': 'fizz'}}],
+            'count': 1,
+            'nextPageToken': 'fizzbuzz',
+        },
+        {
+            'items': [{'jazz': {'fuzz': 'fizz'}}],
+            'count': 1,
+        },
+    ]
+    cloud = fest.cloud.CalendarAPI()
+    ret = cloud.get_events('cal_id')
+    exp = [{'fizz': {'buzz': 'fizz'}}, {'jazz': {'fuzz': 'fizz'}}]
+    assert ret == exp
+
+
+
 @mock.patch('fest.cloud.CalendarAPI.iter_events')
 def test_cloud_get_events(mock_iter):
     cloud = MockCalendarAPI()
@@ -458,12 +478,18 @@ def test_cloud_iter_calendars():
 def test_cloud_iter_events():
     cloud = MockCalendarAPI()
     cloud.service\
-         .events.return_value\
-         .list.return_value\
-         .execute.return_value = {'items': [{'id': '1'}, {'id': '2'}]}
+        .events.return_value\
+        .list.return_value\
+        .execute.side_effect = [
+            {'items': [{'id': '1'}, {'id': '2'}], 'nextPageToken': 'fizz'},
+            {'items': [{'id': '3'}, {'id': '4'}]},
+        ]
     assert list(cloud.iter_events('cal_id')) == [
         fest.cloud.GoogleEvent(cloud, id='1'),
-        fest.cloud.GoogleEvent(cloud, id='2')]
+        fest.cloud.GoogleEvent(cloud, id='2'),
+        fest.cloud.GoogleEvent(cloud, id='3'),
+        fest.cloud.GoogleEvent(cloud, id='4'),
+    ]
 
 
 @mock.patch('fest.cloud.CalendarAPI.iter_events')

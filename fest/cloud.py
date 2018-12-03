@@ -316,7 +316,11 @@ class CalendarAPI(bases.BaseAPI):
             :param bool dryrun: Toggle execute batch request
         """
         # pylint: disable=too-many-locals
-        eventmap = {x.source_id: x for x in self.iter_events(calendar_id)}
+        eventmap = {
+            x.source_id: x
+            for x in self.iter_events(calendar_id)
+            if x.source_id
+        }
         batch = self.service.new_batch_http_request()
         service = self.service.events()
 
