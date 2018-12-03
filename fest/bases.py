@@ -1,10 +1,13 @@
 """
 Base objects
 """
-import collections
 import hashlib
 import json
 import logging
+try:
+    from collections import abc as collections
+except ImportError:  # pragma: no cover
+    import collections
 
 
 class BaseAPI(object):
@@ -53,9 +56,7 @@ class BaseObject(collections.Mapping):
     @property
     def source_digest(self):
         """ Get digest of source object. """
-        pass
 
     @property
     def source_id(self):
         """ Get ID of source object. """
-        pass
