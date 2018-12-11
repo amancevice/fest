@@ -2,13 +2,17 @@
 Facebook Graph API tools.
 """
 import os
+import urllib
 from copy import deepcopy
+from datetime import datetime
+from datetime import timezone
 from datetime import timedelta
 
 import facebook
-from dateutil import parser as dateparser
+
 from fest import bases
 
+DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
 FACEBOOK_PAGE_TOKEN = os.getenv('FACEBOOK_PAGE_TOKEN')
 
 
@@ -38,7 +42,8 @@ class GraphAPI(bases.BaseAPI):
             :param tuple(str) fields: Optional page fields
         """
         fields = {'about', 'location', 'mission', 'name'} | set(fields)
-        path = '{}?fields={}'.format(page_id, ','.join(sorted(fields)))
+        fields = ','.join(sorted(fields))
+        path = f'{page_id}?fields={fields}'
         return FacebookPage(self, **self.get_object(path))
 
     def get_event(self, event_id, *fields):
@@ -47,9 +52,12 @@ class GraphAPI(bases.BaseAPI):
             :param str event_id: facebook event ID
             :param tuple(str) fields: Optional page fields
         """
-        fields = {'cover', 'description', 'end_time', 'id', 'name', 'place',
-                  'start_time'} | set(fields)
-        path = '{}?fields={}'.format(event_id, ','.join(sorted(fields)))
+        fields = {
+            'cover', 'description', 'end_time', 'id', 'name', 'place',
+            'start_time'
+        } | set(fields)
+        fields = ','.join(sorted(fields))
+        path = f'{event_id}?fields={fields}'
         return FacebookEvent(self, **self.get_object(path))
 
     def get_events(self, page_id, **args):
@@ -66,7 +74,8 @@ class GraphAPI(bases.BaseAPI):
             :param str facebook_id: facebook object ID
             :param dict args: Optional additional arguments
         """
-        self.logger.info('GET /%s %r', facebook_id, args)
+        params = urllib.parse.urlencode(args)
+        self.logger.info('GET /%s?%s', facebook_id, params)
         return self.service.get_object(facebook_id, **args)
 
     def get_objects(self, facebook_ids, **args):
@@ -83,8 +92,8 @@ class GraphAPI(bases.BaseAPI):
             :param str page_id: facebook page ID
             :param dict args: Optional arguments to get_object
         """
-        params = ['{}={}'.format(k, v) for k, v in args.items()]
-        path = '{}/events?{}'.format(page_id, '&'.join(params))
+        params = urllib.parse.urlencode(args)
+        path = '{page_id}/events?{params}'
         response = self.get_object(path)
         for item in response['data']:
             # Yield recurring events as individual FacebookEvent items
@@ -112,7 +121,8 @@ class GraphAPI(bases.BaseAPI):
             :param str facebook_id: facebook object ID
             :param dict args: Optional additional arguments
         """
-        self.logger.info('GET /%s %r', facebook_ids, args)
+        params = urllib.parse.urlencode(args)
+        self.logger.info('GET /%s?%s', facebook_ids, params)
         chunks = list(range(0, len(facebook_ids), 50)) + [len(facebook_ids)]
         for left, right in zip(chunks[:-1], chunks[1:]):
             objs = self.service.get_objects(facebook_ids[left:right], **args)
@@ -135,7 +145,7 @@ class FacebookObject(bases.BaseObject):
     @property
     def url(self):
         """ Facebook URL of object. """
-        return 'https://www.facebook.com/{id}'.format(id=self.source_id)
+        return f'https://www.facebook.com/{self.source_id}'
 
 
 class FacebookPage(FacebookObject):
@@ -209,30 +219,23 @@ class FacebookEvent(FacebookObject):
     def timezone(self):
         """ Get timezone from event. """
         try:
-            # pylint: disable=no-member
-            timestamp = dateparser.parse(self.get('start_time'))
-            offset = timestamp.tzinfo.utcoffset(timestamp)
-            sign = '-' if offset.total_seconds() < 0 else '+'
-            seconds = offset.total_seconds()
-            hours = str(abs(int(seconds / 60**2))).rjust(2, '0')
-            minutes = str(abs(int(seconds % 60**2))).rjust(2, '0')
-            return 'UTC{sign}{hours}:{minutes}'.format(sign=sign,
-                                                       hours=hours,
-                                                       minutes=minutes)
-        except (AttributeError, TypeError):
+            return self.start_time().tzname()
+        except ValueError:
             return None
 
     def start_time(self):
         """ Helper to get start_time datetime object. """
-        return dateparser.parse(self.get('start_time'))
+        start_time = self.get('start_time')
+        return datetime.strptime(start_time, DATETIME_FORMAT)
 
     def end_time(self, **delta):
         """ Helper to get end_time datetime object.
 
             :param dict delta: Optional timedelta if end_time not given
         """
+        end_time = self.get('end_time')
         try:
-            return dateparser.parse(self.get('end_time'))
+            return datetime.strptime(end_time, DATETIME_FORMAT)
         except TypeError:
             delta = delta or {'hours': 1}
             return self.start_time() + timedelta(**delta)

@@ -3,15 +3,18 @@ Google Cloud tools.
 """
 import base64
 import os
+import urllib
 from datetime import datetime
 from datetime import timedelta
 
 import pytz
-from apiclient import discovery
-from google.oauth2 import service_account
+from google.oauth2 import service_account  # pylint: disable=no-name-in-module
+from googleapiclient import discovery
+
 from fest import graph
 from fest import bases
 
+DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 GOOGLE_CLIENT_EMAIL = os.getenv('GOOGLE_CLIENT_EMAIL')
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_PRIVATE_KEY = os.getenv('GOOGLE_PRIVATE_KEY')
@@ -32,10 +35,10 @@ class CalendarAPI(bases.BaseAPI):
 
             :param str calendar_id: Google Calendar ID
         """
-        utf8_encoded = calendar_id.encode('utf-8')
-        encoded_id = base64.standard_b64encode(utf8_encoded).decode('utf-8')
+        blob = calendar_id.encode('utf-8')
+        encoded_id = base64.standard_b64encode(blob).decode('utf-8').strip('=')
         root_url = 'https://calendar.google.com/calendar/r?cid='
-        return '{}{}'.format(root_url, encoded_id.strip('='))
+        return f'{root_url}{encoded_id}'
 
     @staticmethod
     def get_calendar_ical_url(calendar_id):
@@ -43,9 +46,9 @@ class CalendarAPI(bases.BaseAPI):
 
             :param str calendar_id: Google Calendar ID
         """
-        encoded_id = calendar_id.replace('@', '%40')
+        encoded_id = urllib.parse.quote(calendar_id)
         root_url = 'webcal://calendar.google.com/calendar/ical/'
-        return '{}{}/public/basic.ics'.format(root_url, encoded_id)
+        return f'{root_url}{encoded_id}/public/basic.ics'
 
     @classmethod
     def from_env(cls):
@@ -66,6 +69,7 @@ class CalendarAPI(bases.BaseAPI):
             :param str token_uri: Google auth token URI
         """
         # pylint: disable=too-many-arguments
+        scopes = scopes or [GOOGLE_SCOPE]
         keyfile_dict = {
             'private_key_id': private_key_id or GOOGLE_PRIVATE_KEY_ID,
             'private_key': private_key or GOOGLE_PRIVATE_KEY,
@@ -231,9 +235,11 @@ class CalendarAPI(bases.BaseAPI):
         now = utc.astimezone(tz)
         time_min = now.replace(hour=0, minute=0, second=0, microsecond=0)
         time_max = time_min + timedelta(days=1)
-        return list(self.iter_events(calendar_id,
-                                     timeMin=time_min.isoformat(),
-                                     timeMax=time_max.isoformat()))
+        return list(self.iter_events(
+            calendar_id,
+            timeMin=time_min.isoformat(),
+            timeMax=time_max.isoformat(),
+        ))
 
     def iter_calendars(self, **kwargs):
         """ Iterate over Google Calendars. """
@@ -245,8 +251,7 @@ class CalendarAPI(bases.BaseAPI):
             self.logger.info('GET %s', item['id'])
             yield GoogleCalendar(self, **item)
         try:
-            for item in self.iter_calendars(pageToken=result['nextPageToken']):
-                yield item  # pragma: no cover
+            yield from self.iter_calendars(pageToken=result['nextPageToken'])
         except KeyError:
             pass
 
@@ -257,15 +262,14 @@ class CalendarAPI(bases.BaseAPI):
         """
         service = self.service.events()
         request = service.list(calendarId=calendar_id, **kwargs)
-        self.logger.info(
-            'GET %s/events %s', calendar_id, kwargs.get('pageToken') or '')
+        params = urllib.parse.urlencode(kwargs)
+        self.logger.info('GET %s/events?%s', calendar_id, params)
         result = request.execute()
         for item in result.get('items', []):
             yield GoogleEvent(self, **item)
         try:
             kwargs.update(pageToken=result['nextPageToken'])
-            for item in self.iter_events(calendar_id, **kwargs):
-                yield item  # pragma: no cover
+            yield from self.iter_events(calendar_id, **kwargs)
         except KeyError:
             pass
 
@@ -500,8 +504,8 @@ class GoogleEvent(bases.BaseObject):
 
             :returns str: Event ID
         """
-        extended_properties = self.get('extendedProperties', {})
-        private = extended_properties.get('shared', {})
+        extended_properties = self.get('extendedProperties') or {}
+        private = extended_properties.get('shared') or {}
         return private.get('sourceId')
 
     @property
@@ -510,8 +514,8 @@ class GoogleEvent(bases.BaseObject):
 
             :returns str: Event digest
         """
-        extended_properties = self.get('extendedProperties', {})
-        private = extended_properties.get('shared', {})
+        extended_properties = self.get('extendedProperties') or {}
+        private = extended_properties.get('shared') or {}
         return private.get('digest')
 
     @staticmethod
@@ -523,24 +527,32 @@ class GoogleEvent(bases.BaseObject):
             :returns object: GoogleEvent instance
         """
         summary = facebook_event.get('name')
-        description = "{desc}\n\n{url}"\
-            .format(desc=facebook_event.get('description'),
-                    url=facebook_event.url)
-        start_time = facebook_event.start_time()
-        end_time = facebook_event.end_time()
+        description = facebook_event.get('description')
+        description = f'{description}\n\n{facebook_event.url}'
+        location = facebook_event.location_string()
+        start_time = facebook_event.start_time().strftime(DATETIME_FORMAT)
+        end_time = facebook_event.end_time().strftime(DATETIME_FORMAT)
         timezone = facebook_event.timezone()
-        start_time = start_time.strftime('%Y-%m-%dT%H:%M:%S')
-        end_time = end_time.strftime('%Y-%m-%dT%H:%M:%S')
         google_event = GoogleEvent(
             service=service,
             summary=summary,
             description=description,
-            location=facebook_event.location_string(),
-            start={'dateTime': start_time, 'timeZone': timezone},
-            end={'dateTime': end_time, 'timeZone': timezone},
+            location=location,
+            start={
+                'dateTime': start_time,
+                'timeZone': timezone,
+            },
+            end={
+                'dateTime': end_time,
+                'timeZone': timezone,
+            },
             extendedProperties={
-                'shared': {'digest': facebook_event.digest(),
-                           'sourceId': facebook_event.source_id}})
+                'shared': {
+                    'digest': facebook_event.source_digest,
+                    'sourceId': facebook_event.source_id,
+                },
+            },
+        )
         return google_event
 
 
