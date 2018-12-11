@@ -5,17 +5,13 @@ name = "pypi"
 
 [packages]
 facebook-sdk = ">= 3.0.0"
-google = ">= 1.9.3"
 google-api-python-client = ">= 1.6.4"
-google-auth = ">= 1.5.1"
-python-dateutil = ">= 2.6.1"
-python-wordpress-xmlrpc = ">= 2.3.0"
 pytz = ">= 2018.3"
 requests = ">= 2.20.0"
 
 [dev-packages]
 ipdb = "*"
 ipython = "*"
-mock = "*"
+pylint = "*"
 pytest = "*"
 pytest-cov = "*"
