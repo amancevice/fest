@@ -18,7 +18,7 @@ def test_api_init():
 
 def test_api_log():
     ret = SampleAPI('service')
-    assert ret.__log__ == 'tests.test_bases.SampleAPI'
+    assert ret.__log__ == 'tests.bases_test.SampleAPI'
 
 
 def test_obj_init():

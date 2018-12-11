@@ -1,10 +1,12 @@
 from datetime import datetime
 
 import googleapiclient
-import fest.cloud
-import fest.graph
+import pytest
 import pytz
 import mock
+
+import fest.cloud
+import fest.graph
 
 
 class MockCalendarAPI(fest.cloud.CalendarAPI):
@@ -239,7 +241,6 @@ def test_cloud_iter_events(mock_http):
     ret = cloud.get_events('cal_id')
     exp = [{'fizz': {'buzz': 'fizz'}}, {'jazz': {'fuzz': 'fizz'}}]
     assert ret == exp
-
 
 
 @mock.patch('fest.cloud.CalendarAPI.iter_events')
