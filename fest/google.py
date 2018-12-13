@@ -70,14 +70,13 @@ class GoogleSyncFuture:
             collection[facebook_id] = res
         return callback
 
-    def batchgen(self, method, requests, callback):
+    def batchgen(self, method, requests):
         """ Generate batched requests with callback. """
         if any(requests):
-            events = self.calendar.events()
             count = 0
             batch = self.calendar.batch(self.callbackgen(requests))
-            for facebook_id, kwargs in requests.items():
-                batch.add(method(**kwargs))
+            for request in requests.values():
+                batch.add(method(**request))
                 count += 1
                 if count == MAX_BATCH_REQUESTS:
                     count = 0
@@ -87,7 +86,7 @@ class GoogleSyncFuture:
 
     def execbatch(self, verb, method, requests, dryrun=False):
         """ Execute batches. """
-        batchgen = self.batchgen(method, requests, self.callbackgen(requests))
+        batchgen = self.batchgen(method, requests)
         batches = list(batchgen)
         for i, batch in enumerate(batches):
             self.calendar.logger.info(
@@ -163,6 +162,7 @@ class GoogleSyncFuture:
         return self
 
     def to_dict(self):
+        """ Return created/updated/deleted events as dict. """
         return {
             'created': self.create,
             'updated': self.update,
