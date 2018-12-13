@@ -4,6 +4,7 @@ import pytest
 
 from fest import facebook
 from fest import google
+from fest import utils
 
 
 def test_google_page_iter_events():
@@ -185,6 +186,80 @@ def test_google_page_sync():
     )
 
 
+@mock.patch('fest.utils.digest')
+def test_google_page_sync_multibatch(mock_digest):
+    mock_digest.return_value = '<digest>'
+    mockf = mock.MagicMock()
+    mockg = mock.MagicMock()
+    items = range(0, 99)
+    mockf.get_object.side_effect = mockf.get_objects.side_effect = [
+        {
+            'data': [
+                {
+                    'id': str(x),
+                    'start_time': '2018-12-12T12:00:00-0500',
+                    'end_time': '2018-12-12T13:00:00-0500',
+                    'description': f'some description {x}',
+                    'name': f'Event {x}',
+                    'place': {
+                        'name': 'Boston Public Library',
+                        'location': {
+                            'city': 'Boston',
+                            'country': 'United States',
+                            'state': 'MA',
+                            'street': '700 Boylston St',
+                            'zip': '02116',
+                        },
+                    },
+                }
+                for x in items
+            ],
+        },
+    ]
+    mockg.events.return_value.list.return_value.execute.side_effect = [
+        {
+            'items': [],
+        },
+    ]
+    gcal = google.GoogleCalendar(mockg, 'MyGCal')
+    page = facebook.FacebookPage(mockf, 'MyPage')
+    gcal.sync(page, time_filter='upcoming').execute()
+    mockg.events.return_value.insert.assert_has_calls([
+        mock.call(
+            calendarId='MyGCal',
+            body={
+                'summary': f'Event {x}',
+                'description':
+                    f'some description {x}\n\nhttps://www.facebook.com/{x}',
+                'location':
+                    'Boston Public Library '
+                    '700 Boylston St '
+                    'Boston MA United States 02116',
+                'start': {
+                    'dateTime': '2018-12-12T12:00:00',
+                    'timeZone': 'UTC-05:00',
+                },
+                'end': {
+                    'dateTime': '2018-12-12T13:00:00',
+                    'timeZone': 'UTC-05:00',
+                },
+                'extendedProperties': {
+                    'private': {
+                        'facebookDigest': '<digest>',
+                        'facebookId': str(x),
+                        'facebookPageId': 'MyPage',
+                    },
+                },
+            },
+        )
+        for x in items
+    ])
+    mockg.new_batch_http_request.return_value.execute.assert_has_calls([
+        mock.call(),
+        mock.call(),
+    ])
+
+
 def test_google_page_sync_no_op():
     mockf = mock.MagicMock()
     mockg = mock.MagicMock()
@@ -197,8 +272,8 @@ def test_google_page_sync_no_op():
     gcal = google.GoogleCalendar(mockg, 'MyGCal')
     page = facebook.FacebookPage(mockf, 'MyPage')
     sync = gcal.sync(page, time_filter='upcoming')
-    ret = sync.filter(lambda x: x).execute()
-    exp = {'created': [], 'deleted': [], 'updated': []}
+    ret = sync.filter(lambda x: x).execute().to_dict()
+    exp = {'created': {}, 'deleted': {}, 'updated': {}}
     assert ret == exp
 
 
@@ -207,10 +282,17 @@ def test_callback():
     gcal = google.GoogleCalendar(mockapi, 'MyGCal')
     page = facebook.FacebookPage(mockapi, 'MyPage')
     sync = gcal.sync(page, time_filter='upcoming')
-    items = []
+    items = {}
     callback = sync.callbackgen(items)
-    callback('id', 'response', None)
-    assert items == ['response']
+    res = {
+        'extendedProperties': {
+            'private': {
+                'facebookId': '1'
+            },
+        },
+    }
+    callback('id', res, None)
+    assert items == {'1': res}
 
 
 def test_callback_err():

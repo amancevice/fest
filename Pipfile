@@ -10,6 +10,7 @@ pytz = ">= 2018.3"
 requests = ">= 2.20.0"
 
 [dev-packages]
+boto3 = "*"
 ipdb = "*"
 ipython = "*"
 pylint = "*"

@@ -56,9 +56,9 @@ class GoogleSyncFuture:
         self.request = request
         self.page = page
         self.calendar = calendar
-        self.created = []
-        self.updated = []
-        self.deleted = []
+        self.create = {}
+        self.update = {}
+        self.delete = {}
 
     @staticmethod
     def callbackgen(collection):
@@ -66,29 +66,35 @@ class GoogleSyncFuture:
         def callback(_, res, err):
             if err:
                 raise err
-            collection.append(res)
+            facebook_id = res['extendedProperties']['private']['facebookId']
+            collection[facebook_id] = res
         return callback
 
-    def batchgen(self, requests, callback):
+    def batchgen(self, method, requests, callback):
         """ Generate batched requests with callback. """
-        total = len(requests)
-        chunks = list(range(0, total, MAX_BATCH_REQUESTS)) + [total]
-        for left, right in zip(chunks[:-1], chunks[1:]):
-            chunk = requests[left:right]
-            batch = self.calendar.batch(callback)
-            for request in chunk:
-                batch.add(request)
+        if any(requests):
+            events = self.calendar.events()
+            count = 0
+            batch = self.calendar.batch(self.callbackgen(requests))
+            for facebook_id, kwargs in requests.items():
+                batch.add(method(**kwargs))
+                count += 1
+                if count == MAX_BATCH_REQUESTS:
+                    count = 0
+                    yield batch
+                    batch = self.calendar.batch(self.callbackgen(requests))
             yield batch
 
-    def execbatches(self, batches, method, dryrun=False):
+    def execbatch(self, verb, method, requests, dryrun=False):
         """ Execute batches. """
-        total = len(batches)
-        for count, batch in enumerate(batches):
+        batchgen = self.batchgen(method, requests, self.callbackgen(requests))
+        batches = list(batchgen)
+        for i, batch in enumerate(batches):
             self.calendar.logger.info(
-                'BATCH %s %d/%d',
-                method,
-                count + 1,
-                total,
+                '%s BATCH %d/%d',
+                verb,
+                i + 1,
+                len(batches) % MAX_BATCH_REQUESTS,
             )
             if not dryrun:
                 batch.execute()
@@ -99,11 +105,7 @@ class GoogleSyncFuture:
         facebook_events = {x['id']: x for x in self.request.execute()}
         if not any(facebook_events):
             self.calendar.logger.info('NO-OP')
-            return {
-                'created': self.created,
-                'updated': self.updated,
-                'deleted': self.deleted,
-            }
+            return self
 
         # Get Google Calendar events
         start_times = [
@@ -122,57 +124,47 @@ class GoogleSyncFuture:
             for x in self.calendar.iter_events(
                 timeMin=min(start_times + end_times),
                 timeMax=max(start_times + end_times),
+                singleEvents=True,
                 privateExtendedProperty=f'facebookPageId={self.page.id}',
             )
         }
 
-        # Assemble batched requests
-        create = []
-        update = []
-        delete = []
-        events = self.calendar.events()
-        for facebook_id, source in facebook_events.items():
-            digest = utils.digest(source)
+        # Get create/update/delete request payloads
+        for facebook_id, event in facebook_events.items():
+            digest = utils.digest(event)
             if facebook_id not in google_events:
-                create.append(events.insert(
-                    calendarId=self.calendar.calendar_id,
-                    body=self.page.to_google(source),
-                ))
+                self.create[facebook_id] = {
+                    'calendarId': self.calendar.calendar_id,
+                    'body': self.page.to_google(event),
+                }
+
             elif digest != google_events[facebook_id]['digest']:
-                update.append(events.update(
-                    calendarId=self.calendar.calendar_id,
-                    eventId=google_events[facebook_id]['google_id'],
-                    body=self.page.to_google(source),
-                ))
+                self.update[facebook_id] = {
+                    'calendarId': self.calendar.calendar_id,
+                    'eventId': google_events[facebook_id]['google_id'],
+                    'body': self.page.to_google(event),
+                }
         for facebook_id in google_events.keys() - facebook_events.keys():
-            delete.append(events.delete(
-                calendarId=self.calendar.calendar_id,
-                eventId=google_events[facebook_id]['google_id'],
-            ))
+            self.delete[facebook_id] = {
+                'calendarId': self.calendar.calendar_id,
+                'eventId': google_events[facebook_id]['google_id'],
+            }
 
         # Execute batched requests
-        self.execbatches(
-            list(self.batchgen(create, self.callbackgen(self.created))),
-            'POST',
-            dryrun,
-        )
-        self.execbatches(
-            list(self.batchgen(update, self.callbackgen(self.updated))),
-            'PATCH',
-            dryrun,
-        )
-        self.execbatches(
-            list(self.batchgen(delete, self.callbackgen(self.deleted))),
-            'DELETE',
-            dryrun,
-        )
-        return {
-            'created': self.created,
-            'updated': self.updated,
-            'deleted': self.deleted,
-        }
+        events = self.calendar.events()
+        self.execbatch('POST', events.insert, self.create, dryrun)
+        self.execbatch('PATCH', events.update, self.update, dryrun)
+        self.execbatch('DELETE', events.delete, self.delete, dryrun)
+        return self
 
     def filter(self, func):
         """ Fitler request. """
         self.request = self.request.filter(func)
         return self
+
+    def to_dict(self):
+        return {
+            'created': self.create,
+            'updated': self.update,
+            'deleted': self.delete,
+        }
