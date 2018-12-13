@@ -7,7 +7,6 @@ setup(
     install_requires=[
         'facebook-sdk >= 3.0.0',
         'google-api-python-client >= 1.6.4',
-        'pytz >= 2018.3',
         'requests >= 2.20.0',
     ],
     name='fest',
