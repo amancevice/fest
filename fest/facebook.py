@@ -60,7 +60,7 @@ class FacebookPage:
 
         # Yield objects from chunks
         for left, right in zip(chunks[:-1], chunks[1:]):
-            self.logger.info('GET /%r', ids[left:right])
+            self.logger.info('GET /%s', ','.join(ids[left:right]))
             objs = self.graphapi.get_objects(ids[left:right], **args)
             yield from objs.values()
 

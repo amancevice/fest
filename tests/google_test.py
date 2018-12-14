@@ -84,6 +84,7 @@ def test_google_page_sync():
     gevents = [
         {
             'id': '1',
+            'summary': 'Event 1',
             'extendedProperties': {
                 'private': {
                     'facebookId': '1',
@@ -95,6 +96,7 @@ def test_google_page_sync():
         },
         {
             'id': '2',
+            'summary': 'Event 2',
             'extendedProperties': {
                 'private': {
                     'facebookId': '2',
@@ -105,6 +107,7 @@ def test_google_page_sync():
         },
         {
             'id': '4',
+            'summary': 'Event 4',
             'extendedProperties': {
                 'private': {
                     'facebookId': '4',
@@ -120,7 +123,7 @@ def test_google_page_sync():
         [{'items': gevents}]
     gcal = google.GoogleCalendar(mockg, 'MyGCal')
     page = facebook.FacebookPage(mockf, 'MyPage')
-    gcal.sync(page, time_filter='upcoming').execute()
+    ret = gcal.sync(page, time_filter='upcoming').execute()
     mockg.events.return_value.insert.assert_called_once_with(
         calendarId='MyGCal',
         body={
@@ -268,9 +271,8 @@ def test_google_page_sync_no_op():
     gcal = google.GoogleCalendar(mockg, 'MyGCal')
     page = facebook.FacebookPage(mockf, 'MyPage')
     sync = gcal.sync(page, time_filter='upcoming')
-    ret = sync.filter(lambda x: x).execute().to_dict()
-    exp = {'created': {}, 'deleted': {}, 'updated': {}}
-    assert ret == exp
+    sync.filter(lambda x: x).execute()
+    mockg.new_batch_http_request.assert_not_called()
 
 
 def test_callback():
@@ -278,8 +280,7 @@ def test_callback():
     gcal = google.GoogleCalendar(mockapi, 'MyGCal')
     page = facebook.FacebookPage(mockapi, 'MyPage')
     sync = gcal.sync(page, time_filter='upcoming')
-    items = {}
-    callback = sync.callbackgen(items)
+    callback = sync.callbackgen('POST')
     res = {
         'extendedProperties': {
             'private': {
@@ -288,7 +289,7 @@ def test_callback():
         },
     }
     callback('id', res, None)
-    assert items == {'1': res}
+    assert sync.responses['POST'] == {'1': res}
 
 
 def test_callback_err():

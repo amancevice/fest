@@ -1,6 +1,7 @@
 """
 Google Calendar.
 """
+import json
 import urllib
 
 from fest import utils
@@ -56,46 +57,49 @@ class GoogleSyncFuture:
         self.request = request
         self.page = page
         self.calendar = calendar
-        self.create = {}
-        self.update = {}
-        self.delete = {}
+        self.requests = {'POST': {}, 'PUT': {}, 'DELETE': {}}
+        self.responses = {'POST': {}, 'PUT': {}, 'DELETE': {}}
 
-    @staticmethod
-    def callbackgen(collection):
+    def callbackgen(self, verb):
         """ Generate callback function to collect responses. """
         def callback(_, res, err):
             if err:
                 raise err
             facebook_id = res['extendedProperties']['private']['facebookId']
-            collection[facebook_id] = res
+            self.responses[verb][facebook_id] = res
         return callback
 
-    def batchgen(self, method, requests):
+    def batchgen(self, method, verb):
         """ Generate batched requests with callback. """
+        requests = self.requests[verb]
         if any(requests):
             count = 0
-            batch = self.calendar.batch(self.callbackgen(requests))
-            for request in requests.values():
-                batch.add(method(**request))
+            batch = self.calendar.batch(self.callbackgen(verb))
+            for req in requests.values():
+                self.calendar.logger.info(
+                    '%s /%s/events/%s',
+                    verb,
+                    req['calendarId'],
+                    req.get('eventId', ''))
+                batch.add(method(**req))
                 count += 1
                 if count == MAX_BATCH_REQUESTS:
                     count = 0
                     yield batch
-                    batch = self.calendar.batch(self.callbackgen(requests))
+                    batch = self.calendar.batch(self.callbackgen(verb))
             yield batch
 
-    def execbatch(self, verb, method, requests, dryrun=False):
+    def execbatch(self, method, verb, dryrun=False):
         """ Execute batches. """
-        batchgen = self.batchgen(method, requests)
-        batches = list(batchgen)
-        for i, batch in enumerate(batches):
-            self.calendar.logger.info(
-                '%s BATCH %d/%d',
-                verb,
-                i + 1,
-                len(batches) % MAX_BATCH_REQUESTS,
-            )
-            if not dryrun:
+        batches = self.batchgen(method, verb)
+        for batch in batches:
+            if dryrun:  # pragma: no cover
+                # pylint: disable=protected-access
+                for req in batch._requests.values():
+                    body = json.loads(req.body)
+                    fid = body['extendedProperties']['private']['facebookId']
+                    self.responses[verb][fid] = body
+            else:
                 batch.execute()
 
     def execute(self, dryrun=False):
@@ -132,13 +136,13 @@ class GoogleSyncFuture:
         for facebook_id, event in facebook_events.items():
             digest = utils.digest(event)
             if facebook_id not in google_events:
-                self.create[facebook_id] = {
+                self.requests['POST'][facebook_id] = {
                     'calendarId': self.calendar.calendar_id,
                     'body': self.page.to_google(event),
                 }
 
             elif digest != google_events[facebook_id]['digest']:
-                self.update[facebook_id] = {
+                self.requests['PUT'][facebook_id] = {
                     'calendarId': self.calendar.calendar_id,
                     'eventId': google_events[facebook_id]['google_id'],
                     'body': self.page.to_google(event),
@@ -146,27 +150,19 @@ class GoogleSyncFuture:
         found_req = self.page.get_objects(list(google_events))
         found_ids = {x['id'] for x in found_req.execute()}
         for facebook_id in google_events.keys() - found_ids:
-            self.delete[facebook_id] = {
+            self.requests['DELETE'][facebook_id] = {
                 'calendarId': self.calendar.calendar_id,
                 'eventId': google_events[facebook_id]['google_id'],
             }
 
         # Execute batched requests
         events = self.calendar.events()
-        self.execbatch('POST', events.insert, self.create, dryrun)
-        self.execbatch('PATCH', events.update, self.update, dryrun)
-        self.execbatch('DELETE', events.delete, self.delete, dryrun)
+        self.execbatch(events.insert, 'POST', dryrun)
+        self.execbatch(events.update, 'PUT', dryrun)
+        self.execbatch(events.delete, 'DELETE', dryrun)
         return self
 
     def filter(self, func):
         """ Fitler request. """
         self.request = self.request.filter(func)
         return self
-
-    def to_dict(self):
-        """ Return created/updated/deleted events as dict. """
-        return {
-            'created': self.create,
-            'updated': self.update,
-            'deleted': self.delete,
-        }
