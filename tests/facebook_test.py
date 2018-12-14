@@ -110,7 +110,7 @@ def test_facebook_page_to_google():
     exp = {
         'description': 'desc\n\nhttps://www.facebook.com/1234567890',
         'start': {
-            'dateTime': '2018-02-11T11:00:00',
+            'dateTime': '2018-02-11T11:00:00-05:00',
             'timeZone': 'UTC-05:00'
         },
         'extendedProperties': {
@@ -121,7 +121,7 @@ def test_facebook_page_to_google():
             }
         },
         'end': {
-            'dateTime': '2018-02-11T16:00:00',
+            'dateTime': '2018-02-11T16:00:00-05:00',
             'timeZone': 'UTC-05:00'
         },
         'summary': 'name',
@@ -144,7 +144,7 @@ def test_facebook_page_to_google_no_end():
     exp = {
         'description': 'desc\n\nhttps://www.facebook.com/1234567890',
         'start': {
-            'dateTime': '2018-02-11T11:00:00',
+            'dateTime': '2018-02-11T11:00:00-05:00',
             'timeZone': 'UTC-05:00'
         },
         'extendedProperties': {
@@ -155,7 +155,7 @@ def test_facebook_page_to_google_no_end():
             }
         },
         'end': {
-            'dateTime': '2018-02-11T12:00:00',
+            'dateTime': '2018-02-11T12:00:00-05:00',
             'timeZone': 'UTC-05:00'
         },
         'summary': 'name',

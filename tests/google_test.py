@@ -134,11 +134,11 @@ def test_google_page_sync():
                 '700 Boylston St '
                 'Boston MA United States 02116',
             'start': {
-                'dateTime': '2018-12-14T12:00:00',
+                'dateTime': '2018-12-14T12:00:00-05:00',
                 'timeZone': 'UTC-05:00',
             },
             'end': {
-                'dateTime': '2018-12-14T13:00:00',
+                'dateTime': '2018-12-14T13:00:00-05:00',
                 'timeZone': 'UTC-05:00',
             },
             'extendedProperties': {
@@ -162,11 +162,11 @@ def test_google_page_sync():
                 '700 Boylston St '
                 'Boston MA United States 02116',
             'start': {
-                'dateTime': '2018-12-13T12:00:00',
+                'dateTime': '2018-12-13T12:00:00-05:00',
                 'timeZone': 'UTC-05:00',
             },
             'end': {
-                'dateTime': '2018-12-13T13:00:00',
+                'dateTime': '2018-12-13T13:00:00-05:00',
                 'timeZone': 'UTC-05:00',
             },
             'extendedProperties': {
@@ -235,11 +235,11 @@ def test_google_page_sync_multibatch(mock_digest):
                     '700 Boylston St '
                     'Boston MA United States 02116',
                 'start': {
-                    'dateTime': '2018-12-12T12:00:00',
+                    'dateTime': '2018-12-12T12:00:00-05:00',
                     'timeZone': 'UTC-05:00',
                 },
                 'end': {
-                    'dateTime': '2018-12-12T13:00:00',
+                    'dateTime': '2018-12-12T13:00:00-05:00',
                     'timeZone': 'UTC-05:00',
                 },
                 'extendedProperties': {

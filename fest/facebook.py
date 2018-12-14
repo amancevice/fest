@@ -120,8 +120,8 @@ class FacebookPage:
         except KeyError:
             end_time = start_time + timedelta(hours=1)
         time_zone = start_time.tzname() or end_time.tzname()
-        start_time = start_time.strftime('%Y-%m-%dT%H:%M:%S')
-        end_time = end_time.strftime('%Y-%m-%dT%H:%M:%S')
+        start_time = start_time.isoformat()
+        end_time = end_time.isoformat()
         location = self.location_string(event)
         digest = utils.digest(event)
         google_event = {
