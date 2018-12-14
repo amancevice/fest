@@ -28,100 +28,96 @@ def test_google_page_sync():
     mockf = mock.MagicMock()
     mockg = mock.MagicMock()
 
-    mockf.get_object.side_effect = mockf.get_objects.side_effect = [
+    fevents = [
         {
-            'data': [
-                {
-                    'id': '1',
-                    'start_time': '2018-12-12T12:00:00-0500',
-                    'end_time': '2018-12-12T13:00:00-0500',
-                    'description': 'some description 1',
-                    'name': 'Event 1',
-                    'place': {
-                        'name': 'Boston Public Library',
-                        'location': {
-                            'city': 'Boston',
-                            'country': 'United States',
-                            'state': 'MA',
-                            'street': '700 Boylston St',
-                            'zip': '02116',
-                        },
-                    },
+            'id': '1',
+            'start_time': '2018-12-12T12:00:00-0500',
+            'end_time': '2018-12-12T13:00:00-0500',
+            'description': 'some description 1',
+            'name': 'Event 1',
+            'place': {
+                'name': 'Boston Public Library',
+                'location': {
+                    'city': 'Boston',
+                    'country': 'United States',
+                    'state': 'MA',
+                    'street': '700 Boylston St',
+                    'zip': '02116',
                 },
-                {
-                    'id': '2',
-                    'start_time': '2018-12-13T12:00:00-0500',
-                    'end_time': '2018-12-13T13:00:00-0500',
-                    'description': 'some description 2',
-                    'name': 'Event 2',
-                    'place': {
-                        'name': 'Boston Public Library',
-                        'location': {
-                            'city': 'Boston',
-                            'country': 'United States',
-                            'state': 'MA',
-                            'street': '700 Boylston St',
-                            'zip': '02116',
-                        },
-                    },
+            },
+        },
+        {
+            'id': '2',
+            'start_time': '2018-12-13T12:00:00-0500',
+            'end_time': '2018-12-13T13:00:00-0500',
+            'description': 'some description 2',
+            'name': 'Event 2',
+            'place': {
+                'name': 'Boston Public Library',
+                'location': {
+                    'city': 'Boston',
+                    'country': 'United States',
+                    'state': 'MA',
+                    'street': '700 Boylston St',
+                    'zip': '02116',
                 },
-                {
-                    'id': '3',
-                    'start_time': '2018-12-14T12:00:00-0500',
-                    'end_time': '2018-12-14T13:00:00-0500',
-                    'description': 'some description 3',
-                    'name': 'Event 3',
-                    'place': {
-                        'name': 'Boston Public Library',
-                        'location': {
-                            'city': 'Boston',
-                            'country': 'United States',
-                            'state': 'MA',
-                            'street': '700 Boylston St',
-                            'zip': '02116',
-                        },
-                    },
+            },
+        },
+        {
+            'id': '3',
+            'start_time': '2018-12-14T12:00:00-0500',
+            'end_time': '2018-12-14T13:00:00-0500',
+            'description': 'some description 3',
+            'name': 'Event 3',
+            'place': {
+                'name': 'Boston Public Library',
+                'location': {
+                    'city': 'Boston',
+                    'country': 'United States',
+                    'state': 'MA',
+                    'street': '700 Boylston St',
+                    'zip': '02116',
                 },
-            ],
+            },
         },
     ]
-    mockg.events.return_value.list.return_value.execute.side_effect = [
+    gevents = [
         {
-            'items': [
-                {
-                    'id': '1',
-                    'extendedProperties': {
-                        'private': {
-                            'facebookId': '1',
-                            'facebookPageId': 'MyPage',
-                            'facebookDigest':
-                                'c572922673ad8110b615238f8c48cd38ee156bdc',
-                        }
-                    }
-                },
-                {
-                    'id': '2',
-                    'extendedProperties': {
-                        'private': {
-                            'facebookId': '2',
-                            'facebookPageId': 'MyPage',
-                            'facebookDigest': 'OUTDATED',
-                        }
-                    }
-                },
-                {
-                    'id': '4',
-                    'extendedProperties': {
-                        'private': {
-                            'facebookId': '4',
-                            'facebookPageId': 'MyPage',
-                            'facebookDigest': '',
-                        }
-                    }
+            'id': '1',
+            'extendedProperties': {
+                'private': {
+                    'facebookId': '1',
+                    'facebookPageId': 'MyPage',
+                    'facebookDigest':
+                        'c572922673ad8110b615238f8c48cd38ee156bdc',
                 }
-            ],
+            }
         },
+        {
+            'id': '2',
+            'extendedProperties': {
+                'private': {
+                    'facebookId': '2',
+                    'facebookPageId': 'MyPage',
+                    'facebookDigest': 'OUTDATED',
+                }
+            }
+        },
+        {
+            'id': '4',
+            'extendedProperties': {
+                'private': {
+                    'facebookId': '4',
+                    'facebookPageId': 'MyPage',
+                    'facebookDigest': '',
+                }
+            }
+        }
     ]
+    mockf.get_object.side_effect = [{'data': fevents}]
+    mockf.get_objects.side_effect = [{x['id']: x for x in fevents}]
+    mockg.events.return_value.list.return_value.execute.side_effect = \
+        [{'items': gevents}]
     gcal = google.GoogleCalendar(mockg, 'MyGCal')
     page = facebook.FacebookPage(mockf, 'MyPage')
     gcal.sync(page, time_filter='upcoming').execute()

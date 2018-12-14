@@ -143,7 +143,9 @@ class GoogleSyncFuture:
                     'eventId': google_events[facebook_id]['google_id'],
                     'body': self.page.to_google(event),
                 }
-        for facebook_id in google_events.keys() - facebook_events.keys():
+        found_req = self.page.get_objects(list(google_events))
+        found_ids = {x['id'] for x in found_req.execute()}
+        for facebook_id in google_events.keys() - found_ids:
             self.delete[facebook_id] = {
                 'calendarId': self.calendar.calendar_id,
                 'eventId': google_events[facebook_id]['google_id'],
