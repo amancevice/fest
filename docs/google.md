@@ -18,26 +18,22 @@ Select `JSON` as the **Key type** and click **Create**.
 
 The `client_secret.json` file will automatically be downloaded to your computer. **Do not lose this file** as it will not be regenerated.
 
-## Get Access Keys
+## Use Service Account
 
-The `fest` tool makes use of environmental variables to manage access to Google Cloud services. This is not required but certainly makes it easier to deploy the app in service like heroku.
+After downloading the `client_secret.json` credentials file, put it in a safe place on your file system and set the value of the environmental variable `GOOGLE_APPLICATION_CREDENTIALS`.
 
-The following variables can be exported using values from `client_secret.json`
+Create an instance of the Google Calendar API client:
 
-```bash
-export GOOGLE_CLIENT_EMAIL='<google-service-client-email>'
-export GOOGLE_CLIENT_ID='<google-client-id>'
-export GOOGLE_PRIVATE_KEY='<google-private-key-multi-line-string'
-export GOOGLE_PRIVATE_KEY_ID='<google-private-key-id'
-export GOOGLE_TOKEN_URI='https://accounts.google.com/o/oauth2/token'
+```python
+from googleapiclient import discovery
+
+calendarapi = discovery.build('calendar', 'v3', cache_discovery=False)
 ```
 
-## Additional Settings
+Use this client as an input to `fest.GoogleCalendar`:
 
-You may also wish to export the following variables:
+```python
+import fest
 
-```bash
-export GOOGLE_SCOPE='https://www.googleapis.com/auth/calendar'
+gcal = fest.GoogleCalendar(calendarapi, '<google-calendar-id>')
 ```
-
-These variables will enable your app to bind to the correct Google Calendar and give it permission to read/write events.

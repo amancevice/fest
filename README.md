@@ -42,3 +42,7 @@ gcal = fest.GoogleCalendar(calendarapi, '<google-calendar-id>')
 req = gcal.sync(page, time_filter='upcoming')
 res = req.execute()
 ```
+
+### Deployment
+
+A [terraform module](https://github.com/amancevice/terraform-aws-facebook-gcal-sync) module is provided to deploy this tool as a Lambda function on AWS and invoke it on a cron using CloudWatch.
