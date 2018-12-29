@@ -1,4 +1,4 @@
-# Google Cloud
+# Google
 
 This guide will walk you through creating a Google Project & service account that will be used to write to a Google Calendar.
 
