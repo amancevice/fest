@@ -52,4 +52,4 @@ def main(page_id=None, cal_id=None, dryrun=False):
 
 
 if __name__ == '__main__':
-    print(json.dumps(main()))
+    print(json.dumps(main()))  # pragma: no cover
