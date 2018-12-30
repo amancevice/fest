@@ -1,10 +1,12 @@
+"""
+Heroku app
+"""
 import json
 import logging
 import os
-from datetime import datetime
 
 import facebook
-from google.oauth2 import service_account
+from google.oauth2 import service_account  # pylint: disable=no-name-in-module
 from googleapiclient import discovery
 
 import fest
@@ -32,6 +34,7 @@ logging.basicConfig(format='%(name)s - %(levelname)s - %(message)s')
 
 
 def main(page_id=None, cal_id=None, dryrun=False):
+    """ Heroku entrypoint. """
     page_id = page_id or FACEBOOK_PAGE_ID
     cal_id = cal_id or GOOGLE_CALENDAR_ID
 
