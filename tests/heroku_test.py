@@ -6,8 +6,8 @@ os.environ['GOOGLE_CALENDAR_ID'] = 'id@group.calendar.google.com'
 os.environ['FACEBOOK_PAGE_TOKEN'] = 'token'
 os.environ['GOOGLE_SERVICE_ACCOUNT'] = '{}'
 
-with mock.patch(
-    'google.oauth2.service_account.Credentials.from_service_account_info'):
+with mock.patch('google.oauth2.service_account.Credentials.'
+                'from_service_account_info'):
     from fest import heroku
 
 
