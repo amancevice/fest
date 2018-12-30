@@ -43,11 +43,11 @@ req = gcal.sync(page, time_filter='upcoming')
 res = req.execute()
 ```
 
-### Deployment
+## Deployment
 
 Several methods of deployment are provided.
 
-#### AWS
+### AWS
 
 A pair of [terraform](https://github.com/amancevice/terraform-aws-facebook-gcal-sync) [modules](https://github.com/amancevice/terraform-aws-facebook-gcal-sync-secrets) module are provided to deploy this tool as a Lambda function on AWS and invoke it on a cron using CloudWatch.
 
@@ -69,7 +69,7 @@ module facebook_gcal_sync {
 }
 ```
 
-#### Heroku
+### Heroku
 
 A [terraform module](https://github.com/amancevice/terraform-heroku-facebook-gcal-sync) module is provided to deploy this tool as a Heroku application.
 
