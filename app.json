@@ -1,0 +1,33 @@
+{
+  "addons": [
+    "scheduler:standard"
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "description": "Sync public facebook page events to Google Calendar",
+  "env": {
+    "FACEBOOK_PAGE_ID" : {
+      "description": "facebook Page ID/alias"
+    },
+    "FACEBOOK_PAGE_TOKEN": {
+      "description": "facebook page access token"
+    },
+    "GOOGLE_CALENDAR_ID" : {
+      "description": "Google Calendar ID"
+    },
+    "GOOGLE_SERVICE_ACCOUNT": {
+      "description": "Google service account credentials JSON"
+    }
+  },
+  "keywords": [
+    "facebook",
+    "Google Calendar",
+    "Python"
+  ],
+  "name": "facebook Google Calendar sync",
+  "stack": "heroku-18",
+  "website": "https://github.com/amancevice/fest"
+}

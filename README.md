@@ -45,4 +45,10 @@ res = req.execute()
 
 ### Deployment
 
+#### Terraform
+
 A [terraform module](https://github.com/amancevice/terraform-aws-facebook-gcal-sync) module is provided to deploy this tool as a Lambda function on AWS and invoke it on a cron using CloudWatch.
+
+#### Heroku
+
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
