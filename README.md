@@ -45,10 +45,46 @@ res = req.execute()
 
 ### Deployment
 
-#### Terraform
+Several methods of deployment are provided.
 
-A [terraform module](https://github.com/amancevice/terraform-aws-facebook-gcal-sync) module is provided to deploy this tool as a Lambda function on AWS and invoke it on a cron using CloudWatch.
+#### AWS
+
+A pair of [terraform](https://github.com/amancevice/terraform-aws-facebook-gcal-sync) [modules](https://github.com/amancevice/terraform-aws-facebook-gcal-sync-secrets) module are provided to deploy this tool as a Lambda function on AWS and invoke it on a cron using CloudWatch.
+
+```hcl
+module secrets {
+  source                  = "amancevice/facebook-gcal-sync-secrets/aws"
+  facebook_page_token     = "<your-page-access-token>"
+  facebook_secret_name    = "facebook/MyPage"
+  google_secret_name      = "google/MySvcAcct"
+  google_credentials_file = "<path-to-credentials-JSON-file>"
+}
+
+module facebook_gcal_sync {
+  source               = "amancevice/facebook-gcal-sync/aws"
+  facebook_page_id     = "<facebook-page-id>"
+  facebook_secret_name = "${module.secrets.facebook_secret_name}"
+  google_calendar_id   = "<google-calendar-id>"
+  google_secret_name   = "${module.secrets.google_secret_name}"
+}
+```
 
 #### Heroku
+
+A [terraform module](https://github.com/amancevice/terraform-heroku-facebook-gcal-sync) module is provided to deploy this tool as a Heroku application.
+
+```hcl
+module facebook_gcal_sync {
+  source                  = "amancevice/facebook-gcal-sync/heroku"
+  app_name                = "<unique-app-name"
+  facebook_page_id        = "<facebook-page-id>"
+  google_calendar_id      = "<google-calendar-id>"
+  google_credentials_file = "<path-to-google-service-credentials>"
+  facebook_page_token     = "<facebook-page-access-token>"
+}
+```
+
+
+Alternatively, deploy with one click:
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
