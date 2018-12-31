@@ -1,1 +1,1 @@
-python -m fest.heroku
+worker: python -m fest.heroku
