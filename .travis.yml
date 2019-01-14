@@ -4,8 +4,8 @@ python:
 install:
 - pip install . codecov pytest pytest-cov pylint --upgrade
 script:
-- py.test
 - pylint fest
+- py.test
 after_success:
 - codecov
 deploy:
