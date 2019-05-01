@@ -3,11 +3,6 @@ url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-[packages]
-facebook-sdk = ">= 3.0.0"
-google-api-python-client = ">= 1.6.4"
-requests = ">= 2.20.0"
-
 [dev-packages]
 boto3 = "*"
 ipdb = "*"
@@ -15,3 +10,8 @@ ipython = "*"
 pylint = "*"
 pytest = "*"
 pytest-cov = "*"
+
+[packages]
+facebook-sdk = ">= 3.0.0"
+google-api-python-client = ">= 1.6.4"
+requests = ">= 2.20.0"
