@@ -20,7 +20,7 @@ The `client_secret.json` file will automatically be downloaded to your computer.
 
 ## Use Service Account
 
-After downloading the `client_secret.json` credentials file, put it in a safe place on your file system and set the value of the environmental variable `GOOGLE_APPLICATION_CREDENTIALS`.
+After downloading the `client_secret.json` credentials file, put it in a safe place on your file system and set the value of the environmental variable `GOOGLE_SERVICE_ACCOUNT`.
 
 Create an instance of the Google Calendar API client:
 
