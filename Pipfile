@@ -4,10 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [dev-packages]
-boto3 = "*"
+flake8 = "*"
 ipdb = "*"
 ipython = "*"
-pylint = "*"
 pytest = "*"
 pytest-cov = "*"
 

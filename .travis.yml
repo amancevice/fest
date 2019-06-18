@@ -1,21 +1,31 @@
 language: python
 python:
-- '3.6'
-- 3.7-dev
+- "3.6"
+- "3.7-dev"
+before_install:
+- pip install codecov pipenv
 install:
-- pip install -r requirements.txt -r requirements-dev.txt
+- pipenv install --dev
 script:
-- pylint fest
-- py.test
+- pipenv run flake8
+- pipenv run py.test
 after_success:
 - codecov
 deploy:
 - provider: pypi
   user: amancevice
   password:
-    secure: sPuaNjGAL/ZS8zu/2AS56Nq/oKgTUlVeyDnc8YeZE1iSjPntkNaN8bRH8YyvQS7+wnRBfSgRr6fDYxhitj1/r6FeZkw9F5xzz5xBOIKYqSDDKk9LKToAhIYrw3FY0x5lfqFmw1c7eTXkbw6ol6SQPAhTtvo3zmMPVLsgPi6hl5Cr/7vDGItSgu3iC0GOtSGbyC3s1PDxN95RYv8Y7Et87OGCZeTvYf4O74D9ON7pepwBYQKNXtnimpZu9TppOjQiHXTSiSDNCj+6gry0UQQDfkv021Jtr4lBa8Q14W6sMpmv7JlwqVMr3EDay/qtW856NMmtSX0AQi3HAnS7wHUdNUo1jO+NpuUpRU/bt0dl65rM/Vve5pqlcELfMbdWzurcacBV5Iw25BiX0l0mcv3STH5Ve7k56wuvXr+vGNPjaOk6kk2uiUuk+I7ve39ISIfbUdbJP2lHNVbsmfkino8eD7WiOiA5+q01nOmMXtr2C373dtQWs4eWNQN++43e8lftpUemA/nHZFvQQVjuuxUwaVv/Snxy4pq97u1JKAK1en8/WG40XQprSGA8jE7dTw9wkfOyApCSU1AAp5AOHYa0Aaa4Ns0yF0F5hmymuPAhYuYtDA6NYJQ51TaPWcdSVS5dAV8C8FzLUDx2PGefN3s9SjKrgpxtikcT8qHmbFV+Y+c=
+    secure: >-
+      sPuaNjGAL/ZS8zu/2AS56Nq/oKgTUlVeyDnc8YeZE1iSjPntkNaN8bRH8YyvQS7+wnRBfSgRr
+      6fDYxhitj1/r6FeZkw9F5xzz5xBOIKYqSDDKk9LKToAhIYrw3FY0x5lfqFmw1c7eTXkbw6ol6
+      SQPAhTtvo3zmMPVLsgPi6hl5Cr/7vDGItSgu3iC0GOtSGbyC3s1PDxN95RYv8Y7Et87OGCZeT
+      vYf4O74D9ON7pepwBYQKNXtnimpZu9TppOjQiHXTSiSDNCj+6gry0UQQDfkv021Jtr4lBa8Q1
+      4W6sMpmv7JlwqVMr3EDay/qtW856NMmtSX0AQi3HAnS7wHUdNUo1jO+NpuUpRU/bt0dl65rM/
+      Vve5pqlcELfMbdWzurcacBV5Iw25BiX0l0mcv3STH5Ve7k56wuvXr+vGNPjaOk6kk2uiUuk+I
+      7ve39ISIfbUdbJP2lHNVbsmfkino8eD7WiOiA5+q01nOmMXtr2C373dtQWs4eWNQN++43e8lf
+      tpUemA/nHZFvQQVjuuxUwaVv/Snxy4pq97u1JKAK1en8/WG40XQprSGA8jE7dTw9wkfOyApCS
+      U1AAp5AOHYa0Aaa4Ns0yF0F5hmymuPAhYuYtDA6NYJQ51TaPWcdSVS5dAV8C8FzLUDx2PGefN
+      3s9SjKrgpxtikcT8qHmbFV+Y+c=
   on:
-    distributions: sdist bdist_wheel
-    python: '3.6'
     repo: amancevice/fest
     tags: true
