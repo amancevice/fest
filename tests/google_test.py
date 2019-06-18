@@ -4,7 +4,6 @@ import pytest
 
 from fest import facebook
 from fest import google
-from fest import utils
 
 
 def test_google_page_iter_events():
@@ -123,7 +122,7 @@ def test_google_page_sync():
         [{'items': gevents}]
     gcal = google.GoogleCalendar(mockg, 'MyGCal')
     page = facebook.FacebookPage(mockf, 'MyPage')
-    ret = gcal.sync(page, time_filter='upcoming').execute()
+    gcal.sync(page, time_filter='upcoming').execute()
     mockg.events.return_value.insert.assert_called_once_with(
         calendarId='MyGCal',
         body={
