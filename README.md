@@ -1,6 +1,6 @@
 # Facebook Event State Transfer
 
-[![build](https://travis-ci.org/amancevice/fest.svg?branch=master)](https://travis-ci.org/amancevice/fest)
+[![build](https://travis-ci.com/amancevice/fest.svg?branch=master)](https://travis-ci.com/amancevice/fest)
 [![codecov](https://codecov.io/gh/amancevice/fest/branch/master/graph/badge.svg)](https://codecov.io/gh/amancevice/fest)
 [![pypi](https://badge.fury.io/py/fest.svg)](https://badge.fury.io/py/fest)
 
