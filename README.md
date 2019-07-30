@@ -1,8 +1,9 @@
 # Facebook Event State Transfer
 
-[![build](https://travis-ci.com/amancevice/fest.svg?branch=master)](https://travis-ci.com/amancevice/fest)
-[![codecov](https://codecov.io/gh/amancevice/fest/branch/master/graph/badge.svg)](https://codecov.io/gh/amancevice/fest)
-[![pypi](https://badge.fury.io/py/fest.svg)](https://badge.fury.io/py/fest)
+[![Build Status](https://travis-ci.com/amancevice/fest.svg?branch=master)](https://travis-ci.com/amancevice/fest)
+[![PyPI Version](https://badge.fury.io/py/fest.svg)](https://badge.fury.io/py/fest)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/d0ba2f4ce151723edcc1/test_coverage)](https://codeclimate.com/github/amancevice/fest/test_coverage)
+[![Maintainability](https://api.codeclimate.com/v1/badges/d0ba2f4ce151723edcc1/maintainability)](https://codeclimate.com/github/amancevice/fest/maintainability)
 
 Sync public facebook page events to Google Calendar.
 
