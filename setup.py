@@ -14,7 +14,7 @@ setup(
         'requests >= 2.20',
     ],
     long_description=long_description,
-    long_description_content_type="text/markdown",
+    long_description_content_type='text/markdown',
     name='fest',
     packages=find_packages(exclude=['tests']),
     python_requires='>= 3.6',
