@@ -1,5 +1,5 @@
-from setuptools import setup
 from setuptools import find_packages
+from setuptools import setup
 
 with open('README.md', 'r') as readme:
     long_description = readme.read()
@@ -17,7 +17,7 @@ setup(
     long_description_content_type="text/markdown",
     name='fest',
     packages=find_packages(exclude=['tests']),
-    python_requires='>=3.6',
+    python_requires='>= 3.6',
     setup_requires=['setuptools_scm'],
     url='https://github.com/amancevice/fest',
     use_scm_version=True,
