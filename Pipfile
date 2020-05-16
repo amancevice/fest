@@ -9,6 +9,7 @@ ipdb = "*"
 ipython = "*"
 pytest = "*"
 pytest-cov = "*"
+twine = "*"
 
 [packages]
 facebook-sdk = ">= 3.0.0"

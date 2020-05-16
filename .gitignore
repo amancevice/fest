@@ -103,9 +103,6 @@ ENV/
 # pytest
 .pytest_cache/
 
-# pipenv
-Pipfile.lock
-
 # secrets
 .env
 client_secret.json
