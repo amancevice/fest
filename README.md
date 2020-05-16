@@ -1,9 +1,10 @@
 # Facebook Event State Transfer
 
-[![pytest](https://github.com/amancevice/fest/workflows/pytest/badge.svg)](https://github.com/amancevice/fest/actions)
-[![PyPI Version](https://badge.fury.io/py/fest.svg)](https://badge.fury.io/py/fest)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/d0ba2f4ce151723edcc1/test_coverage)](https://codeclimate.com/github/amancevice/fest/test_coverage)
-[![Maintainability](https://api.codeclimate.com/v1/badges/d0ba2f4ce151723edcc1/maintainability)](https://codeclimate.com/github/amancevice/fest/maintainability)
+![pypi](https://img.shields.io/pypi/v/fest?color=yellow&logo=python&logoColor=eee&style=flat-square)
+![python](https://img.shields.io/pypi/pyversions/fest?logo=python&logoColor=eee&style=flat-square)
+[![pytest](https://img.shields.io/github/workflow/status/amancevice/fest/pytest?logo=github&style=flat-square)](https://github.com/amancevice/fest/actions)
+[![coverage](https://img.shields.io/codeclimate/coverage/amancevice/fest?logo=code-climate&style=flat-square)](https://codeclimate.com/github/amancevice/fest/test_coverage)
+[![maintainability](https://img.shields.io/codeclimate/maintainability/amancevice/fest?logo=code-climate&style=flat-square)](https://codeclimate.com/github/amancevice/fest/maintainability)
 
 Sync public facebook page events to Google Calendar.
 
