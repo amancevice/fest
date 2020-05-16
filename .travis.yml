@@ -9,6 +9,7 @@ before_install:
 - chmod +x ./cc-test-reporter
 - ./cc-test-reporter before-build
 install:
+- pipenv lock
 - pipenv install --dev
 script:
 - pipenv run flake8
