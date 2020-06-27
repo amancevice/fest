@@ -26,4 +26,4 @@ jobs:
       - run: flake8
       - run: pytest
       - run: cc-test-reporter after-build
-        if: ${{ github.repository == 'amancevice/fest' }}
+        if: ${{ github.event_name != 'pull_request' }}
