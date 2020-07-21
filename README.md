@@ -34,7 +34,7 @@ import fest
 
 # Connect to Graph API & Calendar API
 graphapi = facebook.GraphAPI('<facebook-page-token>')
-calendarapi = discovery.build('calendar', 'v3', cache_discovery=False)
+calendarapi = discovery.build('<path to client_secret.json>', 'v3', cache_discovery=False)
 
 # Get Page/Calendar objects
 page = fest.FacebookPage(graphapi, '<facebook-page-name-or-id>')

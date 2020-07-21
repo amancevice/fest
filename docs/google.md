@@ -27,7 +27,7 @@ Create an instance of the Google Calendar API client:
 ```python
 from googleapiclient import discovery
 
-calendarapi = discovery.build('calendar', 'v3', cache_discovery=False)
+calendarapi = discovery.build('<path to client_secret.json>', 'v3', cache_discovery=False)
 ```
 
 Use this client as an input to `fest.GoogleCalendar`:
