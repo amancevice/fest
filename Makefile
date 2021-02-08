@@ -1,8 +1,7 @@
-SDIST := dist/$(shell python setup.py --fullname).tar.gz
+PYFILES := $(shell find fest tests -name '*.py')
+SDIST   := dist/$(shell python setup.py --fullname).tar.gz
 
-.PHONY: default clean test upload
-
-default: $(SDIST)
+all: $(SDIST)
 
 clean:
 	rm -rf dist
@@ -12,9 +11,11 @@ test: coverage.xml
 upload: $(SDIST)
 	twine upload $<
 
+.PHONY: all clean test upload
+
 $(SDIST): coverage.xml
 	python setup.py sdist
 
-coverage.xml: $(shell find fest tests -name '*.py')
-	flake8 $^
+coverage.xml: $(PYFILES)
+	flake8 fest tests
 	pytest || (rm $@ ; exit 1)
