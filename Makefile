@@ -6,16 +6,14 @@ all: $(SDIST)
 clean:
 	rm -rf dist
 
-test: coverage.xml
-
 upload: $(SDIST)
 	twine upload $<
 
-.PHONY: all clean test upload
+.PHONY: all clean upload
 
-$(SDIST): coverage.xml
+$(SDIST): $(PYFILES) Pipfile.lock
+	pipenv run pytest
 	python setup.py sdist
 
-coverage.xml: $(PYFILES)
-	flake8 fest tests
-	pytest || (rm $@ ; exit 1)
+Pipfile.lock: Pipfile
+	pipenv install --dev
