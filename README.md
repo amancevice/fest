@@ -78,7 +78,7 @@ A [terraform module](https://github.com/amancevice/terraform-heroku-facebook-gca
 ```hcl
 module facebook_gcal_sync {
   source                  = "amancevice/facebook-gcal-sync/heroku"
-  app_name                = "<unique-app-name"
+  app_name                = "<unique-app-name>"
   facebook_page_id        = "<facebook-page-id>"
   google_calendar_id      = "<google-calendar-id>"
   google_credentials_file = "<path-to-google-service-credentials>"
