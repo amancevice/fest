@@ -54,20 +54,28 @@ Several methods of deployment are provided.
 A pair of [terraform](https://github.com/amancevice/terraform-aws-facebook-gcal-sync) [modules](https://github.com/amancevice/terraform-aws-facebook-gcal-sync-secrets) module are provided to deploy this tool as a Lambda function on AWS and invoke it on a cron using CloudWatch.
 
 ```hcl
-module secrets {
-  source                  = "amancevice/facebook-gcal-sync-secrets/aws"
-  facebook_page_token     = "<your-page-access-token>"
-  facebook_secret_name    = "facebook/MyPage"
-  google_secret_name      = "google/MySvcAcct"
-  google_credentials_file = "<path-to-credentials-JSON-file>"
+# WARNING Be extremely cautious when using secret versions in terraform
+# NEVER store secrets in plaintext and encrypt your remote state
+# I recommend applying the secret versions in a separate workspace with no remote backend,
+# or curating them manually in the console or AWS CLI.
+resource "aws_secretsmanager_secret_version" "facebook" {
+  secret_id     = module.facebook_gcal_sync.facebook_secret.id
+  secret_string = "my-facebook-app-token"
+}
+
+resource "aws_secretsmanager_secret_version" "google" {
+  secret_id     = module.facebook_gcal_sync.google_secret.id
+  secret_string = file("./path/to/my/svc/acct/creds.json")
 }
 
 module facebook_gcal_sync {
-  source               = "amancevice/facebook-gcal-sync/aws"
+  source  = "amancevice/facebook-gcal-sync/aws"
+  version = "~> 1.0"
+
   facebook_page_id     = "<facebook-page-id>"
-  facebook_secret_name = "${module.secrets.facebook_secret_name}"
+  facebook_secret_name = "facebook/my-app"
   google_calendar_id   = "<google-calendar-id>"
-  google_secret_name   = "${module.secrets.google_secret_name}"
+  google_secret_name   = "google/my-svc-acct"
 }
 ```
 
