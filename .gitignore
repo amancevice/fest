@@ -106,3 +106,5 @@ ENV/
 # secrets
 .env
 client_secret.json
+
+Pipfile.lock
