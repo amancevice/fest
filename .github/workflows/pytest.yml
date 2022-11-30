@@ -2,24 +2,23 @@ name: pytest
 on:
   pull_request:
   push:
-  schedule:
-    - cron: "11 21 * * *"
 jobs:
   pytest:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python:
-          - 3.6
-          - 3.7
-          - 3.8
-          - 3.9
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-python@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-      - uses: amancevice/setup-code-climate@v0
+      - uses: amancevice/setup-code-climate@v1
         with:
           cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID }}
       - run: cc-test-reporter before-build
