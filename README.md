@@ -2,7 +2,7 @@
 
 ![pypi](https://img.shields.io/pypi/v/fest?color=yellow&logo=python&logoColor=eee&style=flat-square)
 ![python](https://img.shields.io/pypi/pyversions/fest?logo=python&logoColor=eee&style=flat-square)
-[![pytest](https://img.shields.io/github/workflow/status/amancevice/fest/pytest?logo=github&style=flat-square)](https://github.com/amancevice/fest/actions)
+[![pytest](https://img.shields.io/github/actions/workflow/status/amancevice/fest/pytest.yml?logo=github&style=flat-square)](https://github.com/amancevice/fest/actions/workflows/pytest.yml)
 [![coverage](https://img.shields.io/codeclimate/coverage/amancevice/fest?logo=code-climate&style=flat-square)](https://codeclimate.com/github/amancevice/fest/test_coverage)
 [![maintainability](https://img.shields.io/codeclimate/maintainability/amancevice/fest?logo=code-climate&style=flat-square)](https://codeclimate.com/github/amancevice/fest/maintainability)
 
@@ -93,7 +93,6 @@ module facebook_gcal_sync {
   facebook_page_token     = "<facebook-page-access-token>"
 }
 ```
-
 
 Alternatively, deploy with one click:
 
